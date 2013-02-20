@@ -294,10 +294,15 @@ class FFMpeg(object):
 
     @staticmethod
     def _spawn(cmds):
-        if Popen:
+        if Popen and os.name!='nt':
             p = Popen(cmds, shell=False,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
                 close_fds=True)
+            return (p.stdout, p.stderr)
+        elif Popen and os.name=='nt':
+            p = Popen(cmds, shell=False,
+                stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                close_fds=False)
             return (p.stdout, p.stderr)
         else:
             pin, pout, perr = os.popen3(cmds)
