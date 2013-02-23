@@ -46,6 +46,7 @@ class AudioCodec(BaseCodec):
       * bitrate (integer) - stream bitrate
       * samplerate (integer) - sample rate (frequency)
       * language (str) - language of audio stream (3 char code)
+      * map (int) - stream index
 
     Supported audio codecs are: null (no audio), copy (copy from
     original), vorbis, aac, mp3, mp2
