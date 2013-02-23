@@ -369,7 +369,7 @@ class FFMpeg(object):
         option.
 
         >>> conv = f.convert('test.ogg', '/tmp/output.mp3',
-        ...    ['-acodec libmp3lame', '-vn'])
+        ...    [0, ['-acodec libmp3lame', '-vn']])
         >>> for timecode in conv:
         ...    pass # can be used to inform the user about conversion progress
 
