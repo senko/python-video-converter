@@ -176,7 +176,7 @@ class Converter(object):
 
         if twopass:
             optlist1 = self.parse_options(options, 1)
-            for timecode in self.ffmpeg.convert(infile, outfile, optlist,
+            for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
                     timeout=timeout):
                 yield int((50.0 * timecode) / info.format.duration)
 
