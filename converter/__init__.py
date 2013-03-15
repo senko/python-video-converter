@@ -55,6 +55,7 @@ class Converter(object):
         format_options = None
         audio_options = []
         video_options = []
+        audio_codec = None
 
         if not isinstance(opt, dict):
             raise ConverterError('Invalid output specification')
@@ -73,14 +74,12 @@ class Converter(object):
         if 'audio' not in opt and 'video' not in opt:
             raise ConverterError('Neither audio nor video streams requested')
 
-        if 'audio' not in opt or twopass == 1:
+        if 'audio' not in opt:
             print 'Setting audio codec to null: %s/%s' %(twopass, opt)
             opt['audio'] = {'codec': None}
 
         if 'video' not in opt:
             opt['video'] = {'codec': None}
-
-
 
         if 'audio' in opt:
             print "parsing audio"
@@ -89,7 +88,12 @@ class Converter(object):
             if not isinstance(x, dict) or 'codec' not in x:
                 raise ConverterError('Invalid audio codec specification')
 
+
             c = x['codec']
+
+            if twopass == 1:
+                c = None
+
             print "AudioCodec is : %s" %c
             if c not in self.audio_codecs:
                 raise ConverterError('Requested unknown audio codec ' + str(c))
@@ -186,7 +190,7 @@ class Converter(object):
 
         if twopass:
 
-            optlist1 = self.parse_options(shutil.copy.deepcopy(options), 1)
+            optlist1 = self.parse_options(options, 1)
             optlist2 = self.parse_options(options, 2)
 
             temp_path = mkdtemp()
