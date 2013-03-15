@@ -180,6 +180,8 @@ class Converter(object):
             optlist1 = self.parse_options(options, 1)
             optlist2 = self.parse_options(options, 2)
 
+            print optlist2
+
             temp_path = mkdtemp()
             temp_file = "%s/ffmpeglogfile" % temp_path
 
