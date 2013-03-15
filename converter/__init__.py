@@ -77,7 +77,10 @@ class Converter(object):
         if 'video' not in opt:
             opt['video'] = {'codec': None}
 
+        print opt
+
         if 'audio' in opt:
+            print "parsing audio"
             x = opt['audio']
 
             if not isinstance(x, dict) or 'codec' not in x:
@@ -87,6 +90,7 @@ class Converter(object):
             if c not in self.audio_codecs:
                 raise ConverterError('Requested unknown audio codec ' + str(c))
 
+            print self.audio_codecs[c]
             audio_options = self.audio_codecs[c]().parse_options(x)
             if audio_options is None:
                 raise ConverterError('Unknown audio codec error')
