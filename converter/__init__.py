@@ -3,6 +3,8 @@
 
 import os
 import os.path
+import shutil
+from tempfile import mkdtemp
 
 from avcodecs import video_codec_list, audio_codec_list
 from formats import format_list
@@ -176,14 +178,26 @@ class Converter(object):
 
         if twopass:
             optlist1 = self.parse_options(options, 1)
-            for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
+            optlist2 = self.parse_options(options, 2)
+
+            temp_path = mkdtemp()
+            temp_file = "%s/ffmpeglogfile" % temp_path
+
+            optlist1.append("-passlogfile")
+            optlist1.append(temp_file)
+
+            optlist2.append("-passlogfile")
+            optlist2.append(temp_file)
+
+            for timecode in self.ffmpeg.convert(infile, "/dev/null", optlist1,
                     timeout=timeout):
                 yield int((50.0 * timecode) / info.format.duration)
 
-            optlist2 = self.parse_options(options, 2)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
                     timeout=timeout):
                 yield int(50.0 + (50.0 * timecode) / info.format.duration)
+
+            shutil.rmtree(temp_path)
         else:
             optlist = self.parse_options(options, twopass)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
