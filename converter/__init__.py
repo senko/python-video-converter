@@ -50,8 +50,6 @@ class Converter(object):
         """
         Parse format/codec options and prepare raw ffmpeg option list.
         """
-        print "parse_options"
-        print opt
         format_options = None
         audio_options = []
         video_options = []
@@ -75,19 +73,16 @@ class Converter(object):
             raise ConverterError('Neither audio nor video streams requested')
 
         if 'audio' not in opt:
-            print 'Setting audio codec to null: %s/%s' %(twopass, opt)
             opt['audio'] = {'codec': None}
 
         if 'video' not in opt:
             opt['video'] = {'codec': None}
 
         if 'audio' in opt:
-            print "parsing audio"
             x = opt['audio']
 
             if not isinstance(x, dict) or 'codec' not in x:
                 raise ConverterError('Invalid audio codec specification')
-
 
             c = x['codec']
 
