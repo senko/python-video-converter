@@ -88,6 +88,7 @@ class Converter(object):
                 raise ConverterError('Invalid audio codec specification')
 
             c = x['codec']
+            print "AudioCodec is : %s" %c
             if c not in self.audio_codecs:
                 raise ConverterError('Requested unknown audio codec ' + str(c))
 
