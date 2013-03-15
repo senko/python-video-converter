@@ -72,6 +72,7 @@ class Converter(object):
             raise ConverterError('Neither audio nor video streams requested')
 
         if 'audio' not in opt or twopass == 1:
+            print 'Setting audio codec to null: %s/%s' %(twopass, opt)
             opt['audio'] = {'codec': None}
 
         if 'video' not in opt:
