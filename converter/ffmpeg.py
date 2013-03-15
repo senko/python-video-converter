@@ -270,6 +270,7 @@ class FFMpeg(object):
 
     @staticmethod
     def _spawn(cmds):
+        print cmds
         if Popen:
             p = Popen(cmds, shell=False,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
