@@ -185,7 +185,8 @@ class Converter(object):
             raise ConverterError('Zero-length media')
 
         if twopass:
-            optlist1 = self.parse_options(options, 1)
+
+            optlist1 = self.parse_options(shutil.copy.deepcopy(options), 1)
             optlist2 = self.parse_options(options, 2)
 
             temp_path = mkdtemp()
