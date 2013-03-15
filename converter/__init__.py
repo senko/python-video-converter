@@ -50,6 +50,8 @@ class Converter(object):
         """
         Parse format/codec options and prepare raw ffmpeg option list.
         """
+        print "parse_options"
+        print opt
         format_options = None
         audio_options = []
         video_options = []
@@ -78,7 +80,7 @@ class Converter(object):
         if 'video' not in opt:
             opt['video'] = {'codec': None}
 
-        print opt
+
 
         if 'audio' in opt:
             print "parsing audio"
@@ -185,8 +187,6 @@ class Converter(object):
         if twopass:
             optlist1 = self.parse_options(options, 1)
             optlist2 = self.parse_options(options, 2)
-
-            print optlist2
 
             temp_path = mkdtemp()
             temp_file = "%s/ffmpeglogfile" % temp_path
