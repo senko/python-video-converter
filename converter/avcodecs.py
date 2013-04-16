@@ -167,12 +167,12 @@ class VideoCodec(BaseCodec):
                 h0 = int(w / aspect)
                 assert h0 > h, (sw, sh, w, h)
                 dh = (h0 - h) / 2
-                return (w, h0, 'crop=0:%d:%d:%d' % (dh, w, h))
+                return (w, h0, 'crop=%d:%d:0:%d' % (w, h, dh))
             else:  # source is wider, need to crop left/right
                 w0 = int(h * aspect)
                 assert w0 > w, (sw, sh, w, h)
                 dw = (w0 - w) / 2
-                return (w0, h, 'crop=%d:0:%d:%d' % (dw, w, h))
+                return (w0, h, 'crop=%d:%d:%d:0' % (w, h, dw))
 
         if mode == 'pad':
             # target is taller, need to pad top/bottom
@@ -180,12 +180,12 @@ class VideoCodec(BaseCodec):
                 h1 = int(w / aspect)
                 assert h1 < h, (sw, sh, w, h)
                 dh = (h - h1) / 2
-                return (w, h1, 'pad=%d:%d:0:%d' % (w, h, dh))
+                return (w, h1, 'pad=%d:%d:0:%d' % (w, h, dh)) #FIXED
             else:  # target is wider, need to pad left/right
                 w1 = int(h * aspect)
                 assert w1 < w, (sw, sh, w, h)
                 dw = (w - w1) / 2
-                return (w1, h, 'pad=%d:%d:%d:0' % (w, h, dw))
+                return (w1, h, 'pad=%d:%d:%d:0' % (w, h, dw)) #FIXED
 
         assert False, mode
 
@@ -235,6 +235,7 @@ class VideoCodec(BaseCodec):
             if safe['mode'] in ['stretch', 'crop', 'pad']:
                 mode = safe['mode']
 
+        ow, oh = w, h # FIXED
         w, h, filters = self._aspect_corrections(sw, sh, w, h, mode)
 
         safe['width'] = w
@@ -254,10 +255,10 @@ class VideoCodec(BaseCodec):
         if 'fps' in safe:
             optlist.extend(['-r', str(safe['fps'])])
         if 'bitrate' in safe:
-            optlist.extend(['-b', str(safe['bitrate']) + 'k'])
+            optlist.extend(['-vb', str(safe['bitrate']) + 'k']) # FIXED
         if w and h:
             optlist.extend(['-s', '%dx%d' % (w, h),
-                '-aspect', '%d:%d' % (w, h)])
+                '-aspect', '%d:%d' % (ow, oh)]) # FIXED
         if filters:
             optlist.extend(['-vf', filters])
 
