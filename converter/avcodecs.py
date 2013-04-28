@@ -45,6 +45,8 @@ class AudioCodec(BaseCodec):
       * channels (integer) - number of audio channels
       * bitrate (integer) - stream bitrate
       * samplerate (integer) - sample rate (frequency)
+      * language (str) - language of audio stream (3 char code)
+      * map (int) - stream index
 
     Supported audio codecs are: null (no audio), copy (copy from
     original), vorbis, aac, mp3, mp2
@@ -52,14 +54,16 @@ class AudioCodec(BaseCodec):
 
     encoder_options = {
         'codec': str,
+        'language': str,
         'channels': int,
         'bitrate': int,
-        'samplerate': int
+        'samplerate': int,
+        'map': int
     }
 
-    def parse_options(self, opt):
+    def parse_options(self, opt, stream):
         super(AudioCodec, self).parse_options(opt)
-
+        stream = str(stream)
         safe = self.safe_options(opt)
 
         if 'channels' in safe:
@@ -69,7 +73,7 @@ class AudioCodec(BaseCodec):
 
         if 'bitrate' in safe:
             br = safe['bitrate']
-            if br < 8 or br > 512:
+            if br < 8 or br > 1536:
                 del safe['bitrate']
 
         if 'samplerate' in safe:
@@ -77,15 +81,86 @@ class AudioCodec(BaseCodec):
             if f < 1000 or f > 50000:
                 del safe['samplerate']
 
+        if 'language' in safe:
+            l = safe['language']
+            if len(l) > 3:
+                del safe['language']
+
         safe = self._codec_specific_parse_options(safe)
 
-        optlist = ['-acodec', self.ffmpeg_codec_name]
+        optlist = ['-c:a:' + stream, self.ffmpeg_codec_name]
+        if 'map' in safe:
+            optlist.extend(['-map', '0:' + str(safe['map'])])
         if 'channels' in safe:
-            optlist.extend(['-ac', str(safe['channels'])])
+            optlist.extend(['-ac:a:' + stream, str(safe['channels'])])
         if 'bitrate' in safe:
-            optlist.extend(['-ab', str(safe['bitrate']) + 'k'])
+            optlist.extend(['-b:a:' + stream, str(safe['bitrate']) + 'k'])
         if 'samplerate' in safe:
-            optlist.extend(['-ar', str(safe['samplerate'])])
+            optlist.extend(['-r:a:' + stream, str(safe['samplerate'])])
+        if 'language' in safe:
+                lang = str(safe['language'])
+        else:
+            lang = 'und'
+        optlist.extend(['-metadata:s:a:' + stream, "language=" + lang])
+
+        optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
+        return optlist
+
+
+class SubtitleCodec(BaseCodec):
+    """
+    Base subtitle codec class handles general subtitle options. Possible
+    parameters are:
+      * codec (string) - subtitle codec name (mov_text only one supported currently)
+      * language (string) - language of audio stream (3 char code)
+      * forced (int) - force subtitles (1 true, 0 false)
+      * default (int) - default subtitles (1 true, 0 false)
+
+    Supported subtitle codecs are: null (no subtitle), mov_text
+    """
+
+    encoder_options = {
+        'codec': str,
+        'language': str,
+        'forced': int,
+        'default': int,
+        'map': int
+    }
+
+    def parse_options(self, opt, stream):
+        super(SubtitleCodec, self).parse_options(opt)
+        stream = str(stream)
+        safe = self.safe_options(opt)
+
+        if 'forced' in safe:
+            f = safe['forced']
+            if f < 0 or f > 1:
+                del safe['forced']
+
+        if 'default' in safe:
+            d = safe['default']
+            if d < 0 or d > 1:
+                del safe['default']
+
+        if 'language' in safe:
+            l = safe['language']
+            if len(l) > 3:
+                del safe['language']
+
+        safe = self._codec_specific_parse_options(safe)
+
+        optlist = ['-c:s:' + stream, self.ffmpeg_codec_name]
+        if 'map' in safe:
+            optlist.extend(['-map', '0:' + str(safe['map'])])
+        if 'default' in safe:
+            optlist.extend(['-metadata:s:s:' + stream, "disposition:default=" + str(safe['default'])])
+        if 'forced' in safe:
+            optlist.extend(['-metadata:s:s:' + stream, "disposition:forced=" + str(safe['forced'])])
+        if 'language' in safe:
+                lang = str(safe['language'])
+        else:
+            lang = 'und'
+        optlist.extend(['-metadata:s:s:' + stream, "language=" + lang])
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
         return optlist
@@ -129,6 +204,7 @@ class VideoCodec(BaseCodec):
         'mode': str,
         'src_width': int,
         'src_height': int,
+        'map': int
     }
 
     def _aspect_corrections(self, sw, sh, w, h, mode):
@@ -252,6 +328,8 @@ class VideoCodec(BaseCodec):
         filters = safe['aspect_filters']
 
         optlist = ['-vcodec', self.ffmpeg_codec_name]
+        if 'map' in safe:
+            optlist.extend(['-map', '0:' + str(safe['map'])])
         if 'fps' in safe:
             optlist.extend(['-r', str(safe['fps'])])
         if 'bitrate' in safe:
@@ -272,7 +350,7 @@ class AudioNullCodec(BaseCodec):
     """
     codec_name = None
 
-    def parse_options(self, opt):
+    def parse_options(self, opt, stream):
         return ['-an']
 
 
@@ -292,9 +370,26 @@ class AudioCopyCodec(BaseCodec):
     Copy audio stream directly from the source.
     """
     codec_name = 'copy'
+    encoder_options = {'language': str,
+                       'map': int}
 
-    def parse_options(self, opt):
-            return ['-acodec', 'copy']
+    def parse_options(self, opt, stream):
+        safe = self.safe_options(opt)
+        stream = str(stream)
+        optlist = []
+        optlist.extend(['-c:a:' + stream, 'copy'])
+        if 'map' in safe:
+            optlist.extend(['-map', '0:' + str(safe['map'])])
+        if 'language' in safe:
+            l = safe['language']
+            if len(l) > 3:
+                del safe['language']
+            else:
+                lang = str(safe['language'])
+        else:
+            lang = 'und'
+        optlist.extend(['-metadata:s:a:' + stream, "language=" + lang])
+        return optlist
 
 
 class VideoCopyCodec(BaseCodec):
@@ -302,9 +397,15 @@ class VideoCopyCodec(BaseCodec):
     Copy video stream directly from the source.
     """
     codec_name = 'copy'
+    encoder_options = {'map': int}
 
     def parse_options(self, opt):
-            return ['-vcodec', 'copy']
+        safe = self.safe_options(opt)
+        optlist = []
+        optlist.extend(['-vcodec', 'copy'])
+        if 'map' in safe:
+            optlist.extend(['-map', '0:' + str(safe['map'])])
+        return optlist
 
 
 class VorbisCodec(AudioCodec):
@@ -335,6 +436,22 @@ class AacCodec(AudioCodec):
         return self.aac_experimental_enable
 
 
+class Ac3Codec(AudioCodec):
+    """
+    AC3 audio codec
+    """
+    codec_name = 'ac3'
+    ffmpeg_codec_name = 'ac3'
+
+
+class DtsCodec(AudioCodec):
+    """
+    AC3 audio codec
+    """
+    codec_name = 'dts'
+    ffmpeg_codec_name = 'dts'
+
+
 class H264Codec(VideoCodec):
     """
     H.264/AVC video codec.
@@ -348,8 +465,8 @@ class H264Codec(VideoCodec):
         "-sc_threshold 40 -i_qfactor 0.71 -rc_eq 'blurCplx^(1-qComp)' " +
         "-qcomp 0.6 -qmin 10 -qmax 51 -qdiff 4 -level 30")
 
-    def _codec_specific_produce_ffmpeg_list(self, safe):
-        return self.x264_voodoo_recipe_ipod.split(' ')
+    #def _codec_specific_produce_ffmpeg_list(self, safe):
+        #return self.x264_voodoo_recipe_ipod.split(' ')
 
 
 class Mp3Codec(AudioCodec):
@@ -441,12 +558,24 @@ class Mpeg2Codec(MpegCodec):
     ffmpeg_codec_name = 'mpeg2video'
 
 
+class MOVTextCodec(SubtitleCodec):
+    """
+    MOV Text video codec.
+    """
+    codec_name = 'mov_text'
+    ffmpeg_codec_name = 'mov_text'
+
+
 audio_codec_list = [
-    AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec
+    AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec, Ac3Codec, DtsCodec
 ]
 
 video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Mpeg1Codec,
     Mpeg2Codec
+]
+
+subtitle_codec_list = [
+    MOVTextCodec
 ]
