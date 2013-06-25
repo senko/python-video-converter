@@ -16,8 +16,33 @@ class FFMpegError(Exception):
 
 
 class FFMpegConvertError(Exception):
-    pass
+    def __init__(self, message, cmd, output, details=None):
+        """
+        @param    message: Error message.
+        @type     message: C{str}
 
+        @param    cmd: Full command string used to spawn ffmpeg.
+        @type     cmd: C{str}
+
+        @param    output: Full stdout output from the ffmpeg command.
+        @type     output: C{str}
+
+        @param    details: Optional error details.
+        @type     details: C{str}
+        """
+        super(FFMpegConvertError, self).__init__(message)
+
+        self.cmd = cmd
+        self.output = output
+        self.details = details
+
+    def __repr__(self):
+        error = self.details if self.details else self.message
+        return ('<FFMpegConvertError error="%s", cmd="%s">' %
+                (error, self.cmd))
+
+    def __str__(self):
+        return self.__repr__()
 
 class MediaFormatInfo(object):
     """
@@ -399,14 +424,19 @@ class FFMpeg(object):
             raise FFMpegError('Error while calling ffmpeg binary')
         else:
             if '\n' in total_output:
+                cmd = ' '.join(cmds)
                 line = total_output.split('\n')[-2]
+
                 if line.startswith(infile + ': '):
                     err = line[len(infile) + 2:]
-                    raise FFMpegConvertError('Encoding error: ' + err)
+                    raise FFMpegConvertError('Encoding error', cmd, total_output,
+                                             err)
                 elif line.startswith('Error while '):
-                    raise FFMpegConvertError('Encoding error: ' + line)
+                    raise FFMpegConvertError('Encoding error', cmd, total_output,
+                                             line)
                 elif not yielded:
-                    raise FFMpegConvertError('Unknown ffmpeg error')
+                    raise FFMpegConvertError('Unknown ffmpeg error', cmd,
+                                             total_output, line)
 
     def thumbnail(self, fname, time, outfile, size=None):
         """
