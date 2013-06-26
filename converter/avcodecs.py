@@ -342,7 +342,7 @@ class H264Codec(VideoCodec):
     codec_name = 'h264'
     ffmpeg_codec_name = 'libx264'
 
-    x264_voodoo_recipe_ipod = ("-flags +loop -cmp +chroma " +
+    x264_voodoo_recipe_ipod = ("-flags +loop -cmp chroma " +
         "-partitions +parti4x4+partp8x8+partb8x8 -subq 5 -trellis 1 " +
         "-refs 1 -coder 0 -me_range 16 -g 300 -keyint_min 25 " +
         "-sc_threshold 40 -i_qfactor 0.71 -rc_eq 'blurCplx^(1-qComp)' " +
