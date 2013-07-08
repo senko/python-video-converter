@@ -90,6 +90,7 @@ class MediaStreamInfo(object):
       * codec - codec (short) name (e.g "vorbis", "theora")
       * codec_desc - codec full (descriptive) name
       * duration - stream duration in seconds
+      * metadata - optional metadata associated with a video or audio stream
     Video-specific attributes are:
       * video_width - width of video in pixels
       * video_height - height of video in pixels
@@ -110,6 +111,7 @@ class MediaStreamInfo(object):
         self.video_fps = None
         self.audio_channels = None
         self.audio_samplerate = None
+        self.metadata = {}
 
     @staticmethod
     def parse_float(val, default=0.0):
@@ -149,6 +151,11 @@ class MediaStreamInfo(object):
         elif key == 'sample_rate':
             self.audio_samplerate = self.parse_float(val)
 
+        if key.startswith('TAG:'):
+            key = key.split('TAG:')[1]
+            value = val
+            self.metadata[key] = value
+
         if self.type == 'audio':
             if key == 'avg_frame_rate':
                 if '/' in val:
@@ -172,7 +179,12 @@ class MediaStreamInfo(object):
                     self.video_fps = self.parse_float(val)
 
     def __repr__(self):
+        value = ''
         d = ''
+        metadata_str = ['%s=%s' % (key, value) for key, value
+                        in self.metadata.items()]
+        metadata_str = ', '.join(metadata_str)
+
         if self.type == 'audio':
             d = 'type=%s, codec=%s, channels=%d, rate=%.0f' % (self.type,
                 self.codec, self.audio_channels,
@@ -181,7 +193,13 @@ class MediaStreamInfo(object):
             d = 'type=%s, codec=%s, width=%d, height=%d, fps=%.1f' % (
                 self.type, self.codec, self.video_width, self.video_height,
                 self.video_fps)
-        return 'MediaStreamInfo(%s)' % d
+
+        if self.metadata:
+            value = 'MediaStreamInfo(%s, %s)' % (d, metadata_str)
+        else:
+            value = 'MediaStreamInfo(%s)' % (d)
+
+        return value
 
 
 class MediaInfo(object):
