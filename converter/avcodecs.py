@@ -257,8 +257,11 @@ class VideoCodec(BaseCodec):
         if 'bitrate' in safe:
             optlist.extend(['-vb', str(safe['bitrate']) + 'k']) # FIXED
         if w and h:
-            optlist.extend(['-s', '%dx%d' % (w, h),
-                '-aspect', '%d:%d' % (ow, oh)]) # FIXED
+            optlist.extend(['-s', '%dx%d' % (w, h)])
+
+            if ow and oh:
+                optlist.extend(['-aspect', '%d:%d' % (ow, oh)])
+
         if filters:
             optlist.extend(['-vf', filters])
 
