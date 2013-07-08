@@ -466,4 +466,4 @@ class FFMpeg(object):
             raise FFMpegError('Error while calling ffmpeg binary')
 
         if not os.path.exists(outfile):
-            raise FFMpegError('Error creating thumbnail')
+            raise FFMpegError('Error creating thumbnail: %s' % (output))

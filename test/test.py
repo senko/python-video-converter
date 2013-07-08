@@ -4,10 +4,14 @@
 import sys
 sys.path.append('../')
 
+import random
+import string
+import shutil
 import unittest
 import os
 import os.path
 import datetime
+from os.path import join as pjoin
 
 from converter import ffmpeg, formats, avcodecs, Converter, ConverterError
 
@@ -15,10 +19,19 @@ from converter import ffmpeg, formats, avcodecs, Converter, ConverterError
 class TestFFMpeg(unittest.TestCase):
 
     def setUp(self):
-        pass
+        current_dir = os.path.abspath(os.path.dirname(__file__))
+        temp_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
+
+        self.temp_dir = pjoin(current_dir, temp_name)
+
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+
+        self.video_file_path = pjoin(self.temp_dir, 'output.ogg')
+        self.shot_file_path = pjoin(self.temp_dir, 'shot.png')
 
     def tearDown(self):
-        pass
+        shutil.rmtree(self.temp_dir)
 
     def assertRaisesSpecific(self, exception, fn, *args, **kwargs):
         try:
@@ -38,7 +51,7 @@ class TestFFMpeg(unittest.TestCase):
 
         f = ffmpeg.FFMpeg()
 
-        self.assertEqual(None, f.probe('/nonexistent'))
+        self.assertEqual(None, f.probe('nonexistent'))
         self.assertEqual(None, f.probe('/dev/null'))
 
         info = f.probe('test1.ogg')
@@ -71,14 +84,14 @@ class TestFFMpeg(unittest.TestCase):
             return list(fn(*args, **kwargs))
 
         self.assertRaisesSpecific(ffmpeg.FFMpegError, consume,
-            f.convert, '/nonexistent', '/tmp/output.ogg', [])
+            f.convert, 'nonexistent', self.video_file_path, [])
 
         self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, consume,
-            f.convert, '/etc/passwd', '/tmp/output.ogg', [])
+            f.convert, '/etc/passwd', self.video_file_path, [])
 
         info = f.probe('test1.ogg')
 
-        conv = f.convert('test1.ogg', '/tmp/output.ogg', [
+        conv = f.convert('test1.ogg', self.video_file_path, [
             '-acodec', 'libvorbis', '-ab', '16k', '-ac', '1', '-ar', '11025',
             '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k'
         ])
@@ -88,7 +101,7 @@ class TestFFMpeg(unittest.TestCase):
             assert (tc > last_tc and tc <= info.format.duration + 0.1), (last_tc, tc, info.format.duration)
 
 
-        info = f.probe('/tmp/output.ogg')
+        info = f.probe(self.video_file_path)
         self.assertEqual('ogg', info.format.format)
         self.assertAlmostEqual(33.00, info.format.duration, places=0)
         self.assertEqual(2, len(info.streams))
@@ -106,9 +119,9 @@ class TestFFMpeg(unittest.TestCase):
 
     def test_ffmpeg_thumbnail(self):
         f = ffmpeg.FFMpeg()
-        thumb = '/tmp/shot.png'
+        thumb = self.shot_file_path
 
-        self.assertRaisesSpecific(IOError, f.thumbnail, '/nonexistent', 10, thumb)
+        self.assertRaisesSpecific(IOError, f.thumbnail, 'nonexistent', 10, thumb)
 
         self.ensure_notexist(thumb)
         f.thumbnail('test1.ogg', 10, thumb)
@@ -214,14 +227,14 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(720, info.video.video_width)
         self.assertEqual(400, info.video.video_height)
 
-        f = '/tmp/shot.png'
+        f = self.shot_file_path
 
         self.ensure_notexist(f)
         c.thumbnail('test1.ogg', 10, f)
         self.assertTrue(os.path.exists(f))
         os.unlink(f)
 
-        conv = c.convert('test1.ogg', '/tmp/output.ogg', {
+        conv = c.convert('test1.ogg', self.video_file_path, {
             'format': 'ogg',
             'video': {
                 'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
