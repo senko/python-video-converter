@@ -53,6 +53,7 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(720, v.video_width)
         self.assertEqual(400, v.video_height)
         self.assertAlmostEqual(25.00, v.video_fps, places=2)
+        self.assertEqual(v.metadata['ENCODER'], 'ffmpeg2theora 0.19')
 
         a = info.streams[1]
         self.assertEqual(a, info.audio)
@@ -60,9 +61,10 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual('vorbis', a.codec)
         self.assertEqual(2, a.audio_channels)
         self.assertEqual(48000, a.audio_samplerate)
+        self.assertEqual(a.metadata['ENCODER'], 'ffmpeg2theora 0.19')
 
         self.assertEqual(repr(info),
-            'MediaInfo(format=MediaFormatInfo(format=ogg, duration=33.00), streams=[MediaStreamInfo(type=video, codec=theora, width=720, height=400, fps=25.0), MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000)])')
+            'MediaInfo(format=MediaFormatInfo(format=ogg, duration=33.00), streams=[MediaStreamInfo(type=video, codec=theora, width=720, height=400, fps=25.0, ENCODER=ffmpeg2theora 0.19), MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000, ENCODER=ffmpeg2theora 0.19)])')
 
     def test_ffmpeg_convert(self):
         f = ffmpeg.FFMpeg()
