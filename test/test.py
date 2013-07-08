@@ -150,29 +150,29 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(['-vcodec', 'doctest'],
             c.parse_options({'codec': 'doctest', 'fps': 0, 'bitrate': 0, 'width': 0, 'height': '480' }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-r', '25', '-b', '300k', '-s', '320x240', '-aspect', '320:240'],
+        self.assertEqual(['-vcodec', 'doctest', '-r', '25', '-vb', '300k', '-s', '320x240', '-aspect', '320:240'],
             c.parse_options({'codec': 'doctest', 'fps': '25', 'bitrate': '300', 'width': 320, 'height': 240 }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-s', '384x240', '-aspect', '384:240', '-vf', 'crop=32:0:320:240'],
+        self.assertEqual(['-vcodec', 'doctest', '-s', '384x240', '-aspect', '320:240', '-vf', 'crop=320:240:32:0'],
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'crop',
                 'width': 320, 'height': 240 }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-s', '320x240', '-aspect', '320:240', '-vf', 'crop=0:20:320:200'],
+        self.assertEqual(['-vcodec', 'doctest', '-s', '320x240', '-aspect', '320:200', '-vf', 'crop=320:200:0:20'],
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'crop',
                 'width': 320, 'height': 200 }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-s', '320x200', '-aspect', '320:200', '-vf', 'pad=320:240:0:20'],
+        self.assertEqual(['-vcodec', 'doctest', '-s', '320x200', '-aspect', '320:240', '-vf', 'pad=320:240:0:20'],
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'pad',
                 'width': 320, 'height': 240 }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-s', '266x200', '-aspect', '266:200', '-vf', 'pad=320:200:27:0'],
+        self.assertEqual(['-vcodec', 'doctest', '-s', '266x200', '-aspect', '320:200', '-vf', 'pad=320:200:27:0'],
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'pad',
                 'width': 320, 'height': 200 }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-s', '320x240', '-aspect', '320:240'],
+        self.assertEqual(['-vcodec', 'doctest', '-s', '320x240'],
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'width': 320 }))
 
-        self.assertEqual(['-vcodec', 'doctest', '-s', '320x240', '-aspect', '320:240'],
+        self.assertEqual(['-vcodec', 'doctest', '-s', '320x240'],
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240 }))
 
     def test_converter(self):
