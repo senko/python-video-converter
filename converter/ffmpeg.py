@@ -94,6 +94,7 @@ class MediaStreamInfo(object):
       * codec_desc - codec full (descriptive) name
       * duration - stream duration in seconds
       * metadata - optional metadata associated with a video or audio stream
+      * bitrate - stream bitrate in bytes/second
     Video-specific attributes are:
       * video_width - width of video in pixels
       * video_height - height of video in pixels
@@ -145,6 +146,8 @@ class MediaStreamInfo(object):
             self.codec_desc = val
         elif key == 'duration':
             self.duration = self.parse_float(val)
+        elif key == 'bit_rate':
+            self.bitrate = self.parse_int(val)
         elif key == 'width':
             self.video_width = self.parse_int(val)
         elif key == 'height':
