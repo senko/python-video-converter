@@ -110,6 +110,7 @@ class MediaStreamInfo(object):
         self.codec = None
         self.codec_desc = None
         self.duration = None
+        self.bitrate = None
         self.video_width = None
         self.video_height = None
         self.video_fps = None
