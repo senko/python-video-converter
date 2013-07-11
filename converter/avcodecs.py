@@ -384,7 +384,7 @@ class Vp8Codec(VideoCodec):
     Google VP8 video codec.
     """
     codec_name = 'vp8'
-    ffmpeg_codec_name = 'vp8'
+    ffmpeg_codec_name = 'libvpx'
 
 
 class H263Codec(VideoCodec):
