@@ -4,6 +4,9 @@ import os.path
 import os
 import re
 import signal
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     from subprocess import Popen, PIPE
@@ -314,6 +317,7 @@ class FFMpeg(object):
     @staticmethod
     def _spawn(cmds):
         if Popen:
+            logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
             p = Popen(cmds, shell=False,
                 stdin=PIPE, stdout=PIPE, stderr=PIPE,
                 close_fds=True)
