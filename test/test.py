@@ -30,6 +30,7 @@ class TestFFMpeg(unittest.TestCase):
         self.video_file_path = pjoin(self.temp_dir, 'output.ogg')
         self.shot_file_path = pjoin(self.temp_dir, 'shot.png')
         self.shot2_file_path = pjoin(self.temp_dir, 'shot2.png')
+        self.shot3_file_path = pjoin(self.temp_dir, 'shot3.png')
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
@@ -139,8 +140,9 @@ class TestFFMpeg(unittest.TestCase):
         self.ensure_notexist(thumb)
         self.ensure_notexist(thumb2)
         f.thumbnails('test1.ogg', [
-            (5, thumb, '320x240'),
-            (10, thumb2, None),
+            (5, thumb),
+            (10, thumb2, None, 5),  # set quality
+            (5, self.shot3_file_path, '320x240'),  # set size
         ])
 
     def test_formats(self):

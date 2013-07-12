@@ -197,12 +197,12 @@ class Converter(object):
         """
         return self.ffmpeg.probe(fname)
 
-    def thumbnail(self, fname, time, outfile, size=None):
+    def thumbnail(self, fname, time, outfile, size=None, quality=FFMpeg.DEFAULT_JPEG_QUALITY):
         """
         Create a thumbnail of the media file. See the documentation of
         converter.FFMpeg.thumbnail() for details.
         """
-        return self.ffmpeg.thumbnail(fname, time, outfile, size)
+        return self.ffmpeg.thumbnail(fname, time, outfile, size, quality)
 
     def thumbnails(self, fname, option_list):
         """
