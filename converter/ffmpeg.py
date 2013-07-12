@@ -194,12 +194,13 @@ class MediaStreamInfo(object):
 
         if self.type == 'audio':
             d = 'type=%s, codec=%s, channels=%d, rate=%.0f' % (self.type,
-                self.codec, self.audio_channels,
-                self.audio_samplerate)
+                self.codec, self.audio_channels, self.audio_samplerate)
         elif self.type == 'video':
             d = 'type=%s, codec=%s, width=%d, height=%d, fps=%.1f' % (
                 self.type, self.codec, self.video_width, self.video_height,
                 self.video_fps)
+        if self.bitrate is not None:
+            d += ', bitrate=%d' % self.bitrate
 
         if self.metadata:
             value = 'MediaStreamInfo(%s, %s)' % (d, metadata_str)
