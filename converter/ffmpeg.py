@@ -276,7 +276,7 @@ class FFMpeg(object):
 
     >>> f = FFMpeg()
     """
-    DEFAULT_JPEG_QUALITY = 2
+    DEFAULT_JPEG_QUALITY = 4
 
     def __init__(self, ffmpeg_path=None, ffprobe_path=None):
         """
