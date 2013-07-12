@@ -3,6 +3,8 @@
 
 import os
 import os.path
+import shutil
+from tempfile import mkdtemp
 
 from avcodecs import video_codec_list, audio_codec_list
 from formats import format_list
@@ -51,6 +53,7 @@ class Converter(object):
         format_options = None
         audio_options = []
         video_options = []
+        audio_codec = None
 
         if not isinstance(opt, dict):
             raise ConverterError('Invalid output specification')
@@ -69,7 +72,7 @@ class Converter(object):
         if 'audio' not in opt and 'video' not in opt:
             raise ConverterError('Neither audio nor video streams requested')
 
-        if 'audio' not in opt or twopass == 1:
+        if 'audio' not in opt:
             opt['audio'] = {'codec': None}
 
         if 'video' not in opt:
@@ -82,9 +85,15 @@ class Converter(object):
                 raise ConverterError('Invalid audio codec specification')
 
             c = x['codec']
+
+            if twopass == 1:
+                c = None
+
+            print "AudioCodec is : %s" %c
             if c not in self.audio_codecs:
                 raise ConverterError('Requested unknown audio codec ' + str(c))
 
+            print self.audio_codecs[c]
             audio_options = self.audio_codecs[c]().parse_options(x)
             if audio_options is None:
                 raise ConverterError('Unknown audio codec error')
@@ -175,15 +184,28 @@ class Converter(object):
             raise ConverterError('Zero-length media')
 
         if twopass:
+
             optlist1 = self.parse_options(options, 1)
-            for timecode in self.ffmpeg.convert(infile, outfile, optlist,
+            optlist2 = self.parse_options(options, 2)
+
+            temp_path = mkdtemp()
+            temp_file = "%s/ffmpeglogfile" % temp_path
+
+            optlist1.append("-passlogfile")
+            optlist1.append(temp_file)
+
+            optlist2.append("-passlogfile")
+            optlist2.append(temp_file)
+
+            for timecode in self.ffmpeg.convert(infile, "/dev/null", optlist1,
                     timeout=timeout):
                 yield int((50.0 * timecode) / info.format.duration)
 
-            optlist2 = self.parse_options(options, 2)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
                     timeout=timeout):
                 yield int(50.0 + (50.0 * timecode) / info.format.duration)
+
+            shutil.rmtree(temp_path)
         else:
             optlist = self.parse_options(options, twopass)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
