@@ -120,10 +120,10 @@ class TestFFMpeg(unittest.TestCase):
 
         info = f.probe('test1.ogg')
 
-        conv = f.convert('test1.ogg', self.video_file_path, [
+        convert_options = [
             '-acodec', 'libvorbis', '-ab', '16k', '-ac', '1', '-ar', '11025',
-            '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k'
-        ])
+             '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
+        conv = f.convert('test1.ogg', self.video_file_path, convert_options)
 
         last_tc = 0.0
         for tc in conv:
@@ -151,6 +151,15 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual('vorbis', info.audio.codec)
         self.assertEqual(1, info.audio.audio_channels)
         self.assertEqual(11025, info.audio.audio_samplerate)
+
+        # test when ffmpeg is killed
+        conv = f.convert('test1.ogg', self.video_file_path, convert_options,
+                         yield_process=True)
+        p = conv.next()  # get process object
+        conv.next()  # let ffmpeg to start
+        p.terminate()
+        self.assertRaisesSpecific(ffmpeg.FFMpegError, list, conv)
+
 
     def test_ffmpeg_thumbnail(self):
         f = ffmpeg.FFMpeg()
