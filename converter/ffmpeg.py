@@ -284,6 +284,7 @@ class FFMpeg(object):
 
     >>> f = FFMpeg()
     """
+    DEFAULT_JPEG_QUALITY = 4
 
     def __init__(self, ffmpeg_path=None, ffprobe_path=None):
         """
@@ -465,32 +466,47 @@ class FFMpeg(object):
                     raise FFMpegConvertError('Unknown ffmpeg error', cmd,
                                              total_output, line)
 
-    def thumbnail(self, fname, time, outfile, size=None):
+    def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
         """
-        Create a thumbnal at the specific time point (in seconds) of
-        the media file, and store it to outfile. Size, if specified,
-        is WxH of the desired thumbnail. If not specified, the video
-        resolution is used.
+        Create a thumbnal of media file, and store it to outfile
+        @param time: time point (in seconds) (float or int)
+        @param size: Size, if specified, is WxH of the desired thumbnail.
+            If not specified, the video resolution is used.
+        @param quality: quality of jpeg file in range 2(best)-31(worst)
+            recommended range: 2-6
 
         >>> f.thumbnail('test1.ogg', 5, '/tmp/shot.png', '320x240')
+        """
+        return self.thumbnails(fname, [(time, outfile, size, quality)])
+
+    def thumbnails(self, fname, option_list):
+        """
+        Create one or more thumbnails of video.
+        @param option_list: a list of tuples like:
+            (time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY)
+            see documentation of `converter.FFMpeg.thumbnail()` for details.
+
+        >>> f.thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
+        >>>                            (10, '/tmp/shot2.png', None, 5)])
         """
         if not os.path.exists(fname):
             raise IOError('No such file: ' + fname)
 
-        cmds = [self.ffmpeg_path,
-            '-ss', str(time),
-            '-i', fname,
-            '-y', '-an', '-f', 'image2', '-q:v', '0', '-vframes', '1']
+        cmds = [self.ffmpeg_path, '-i', fname, '-y', '-an']
+        for thumb in option_list:
+            if len(thumb) > 2 and thumb[2]:
+                cmds.extend(['-s', str(thumb[2])])
 
-        if size:
-            cmds.extend(['-s', str(size)])
-
-        cmds.append(outfile)
+            cmds.extend([
+                '-f', 'image2', '-vframes', '1',
+                '-ss', str(thumb[0]), thumb[1],
+                '-q:v', str(FFMpeg.DEFAULT_JPEG_QUALITY if len(thumb) < 4 else str(thumb[3])),
+            ])
 
         _, fd = self._spawn(cmds)
         output = fd.read()
         if output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
 
-        if not os.path.exists(outfile):
-            raise FFMpegError('Error creating thumbnail: %s' % (output))
+        if any(not os.path.exists(option[1]) for option in option_list):
+            raise FFMpegError('Error creating thumbnail: %s' % output)
