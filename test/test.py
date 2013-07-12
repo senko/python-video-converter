@@ -28,6 +28,7 @@ class TestFFMpeg(unittest.TestCase):
             os.makedirs(self.temp_dir)
 
         self.video_file_path = pjoin(self.temp_dir, 'output.ogg')
+        self.audio_file_path = pjoin(self.temp_dir, 'output.mp3')
         self.shot_file_path = pjoin(self.temp_dir, 'shot.png')
 
     def tearDown(self):
@@ -242,6 +243,14 @@ class TestFFMpeg(unittest.TestCase):
                 'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
             'audio': {
                 'codec': 'vorbis', 'channels': 1, 'bitrate': 32 }
+            })
+
+        self.assertTrue(verify_progress(conv))
+
+        conv = c.convert('test.aac', self.audio_file_path, {
+            'format': 'mp3',
+            'audio': {
+                'codec': 'mp3', 'channels': 1, 'bitrate': 32 }
             })
 
         self.assertTrue(verify_progress(conv))
