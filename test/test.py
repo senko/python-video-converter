@@ -144,6 +144,9 @@ class TestFFMpeg(unittest.TestCase):
             (10, thumb2, None, 5),  # set quality
             (5, self.shot3_file_path, '320x240'),  # set size
         ])
+        self.assertTrue(os.path.exists(thumb))
+        self.assertTrue(os.path.exists(thumb2))
+        self.assertTrue(os.path.exists(self.shot3_file_path))
 
     def test_formats(self):
         c = formats.BaseFormat()
