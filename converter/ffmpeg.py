@@ -458,30 +458,41 @@ class FFMpeg(object):
 
     def thumbnail(self, fname, time, outfile, size=None):
         """
-        Create a thumbnal at the specific time point (in seconds) of
-        the media file, and store it to outfile. Size, if specified,
-        is WxH of the desired thumbnail. If not specified, the video
-        resolution is used.
+        Create a thumbnal of media file, and store it to outfile
+        @param time: time point (in seconds) (float or int)
+        @param size: Size, if specified, is WxH of the desired thumbnail.
+            If not specified, the video resolution is used.
 
         >>> f.thumbnail('test1.ogg', 5, '/tmp/shot.png', '320x240')
+        """
+        return self.thumbnails(fname, [(time, outfile, size)])
+
+    def thumbnails(self, fname, option_list):
+        """
+        Create one or more thumbnails of video.
+        @param option_list: a list of tuples like (time, outfile, size)
+            see documentation of `converter.FFMpeg.thumbnail()` for details.
+
+        >>> f.thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
+        >>>                            (10, '/tmp/shot2.png', None)])
         """
         if not os.path.exists(fname):
             raise IOError('No such file: ' + fname)
 
-        cmds = [self.ffmpeg_path,
-            '-ss', str(time),
-            '-i', fname,
-            '-y', '-an', '-f', 'image2', '-q:v', '0', '-vframes', '1']
+        cmds = [self.ffmpeg_path, '-i', fname, '-y', '-an']
+        for time, outfile, size in option_list:
+            if size:
+                cmds.extend(['-s', str(size)])
 
-        if size:
-            cmds.extend(['-s', str(size)])
-
-        cmds.append(outfile)
+            cmds.extend([
+                '-f', 'image2', '-q:v', '0', '-vframes', '1',
+                '-ss', str(time), outfile
+            ])
 
         _, fd = self._spawn(cmds)
         output = fd.read()
         if output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
 
-        if not os.path.exists(outfile):
-            raise FFMpegError('Error creating thumbnail: %s' % (output))
+        if any(not os.path.exists(option[1]) for option in option_list):
+            raise FFMpegError('Error creating thumbnail: %s' % output)

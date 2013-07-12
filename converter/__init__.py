@@ -203,3 +203,10 @@ class Converter(object):
         converter.FFMpeg.thumbnail() for details.
         """
         return self.ffmpeg.thumbnail(fname, time, outfile, size)
+
+    def thumbnails(self, fname, option_list):
+        """
+        Create one or more thumbnail of the media file. See the documentation
+        of converter.FFMpeg.thumbnails() for details.
+        """
+        return self.ffmpeg.thumbnails(fname, option_list)
