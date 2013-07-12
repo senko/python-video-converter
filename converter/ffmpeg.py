@@ -441,23 +441,31 @@ class FFMpeg(object):
         if timeout:
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
+        p.communicate()  # wait for process to exit
+
         if total_output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
-        else:
-            if '\n' in total_output:
-                cmd = ' '.join(cmds)
-                line = total_output.split('\n')[-2]
 
-                if line.startswith(infile + ': '):
-                    err = line[len(infile) + 2:]
-                    raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                             err)
-                elif line.startswith('Error while '):
-                    raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                             line)
-                elif not yielded:
-                    raise FFMpegConvertError('Unknown ffmpeg error', cmd,
-                                             total_output, line)
+        if '\n' in total_output:
+            cmd = ' '.join(cmds)
+            line = total_output.split('\n')[-2]
+
+            if line.startswith('Received signal'):
+                # Received signal 15: terminating.
+                raise FFMpegConvertError(line.split(':')[0], cmd, total_output)
+            if line.startswith(infile + ': '):
+                err = line[len(infile) + 2:]
+                raise FFMpegConvertError('Encoding error', cmd, total_output,
+                                         err)
+            if line.startswith('Error while '):
+                raise FFMpegConvertError('Encoding error', cmd, total_output,
+                                         line)
+            if not yielded:
+                raise FFMpegConvertError('Unknown ffmpeg error', cmd,
+                                         total_output, line)
+        if p.returncode != 0:
+            raise FFMpegConvertError('Exited with code %d' % p.returncode, cmd,
+                                     total_output)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
         """

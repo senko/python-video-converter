@@ -158,7 +158,7 @@ class TestFFMpeg(unittest.TestCase):
         p = conv.next()  # get process object
         conv.next()  # let ffmpeg to start
         p.terminate()
-        self.assertRaisesSpecific(ffmpeg.FFMpegError, list, conv)
+        self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, list, conv)
 
 
     def test_ffmpeg_thumbnail(self):
