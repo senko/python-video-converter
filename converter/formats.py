@@ -84,7 +84,15 @@ class MpegFormat(BaseFormat):
     ffmpeg_format_name = 'mpegts'
 
 
+class Mp3Format(BaseFormat):
+    """
+    Mp3 container, used audio-only mp3 files
+    """
+    format_name = 'mp3'
+    ffmpeg_format_name = 'mp3'
+
+
 format_list = [
     OggFormat, AviFormat, MkvFormat, WebmFormat, FlvFormat,
-    MovFormat, Mp4Format, MpegFormat
+    MovFormat, Mp4Format, MpegFormat, Mp3Format
 ]
