@@ -69,39 +69,39 @@ class Converter(object):
         if 'audio' not in opt and 'video' not in opt:
             raise ConverterError('Neither audio nor video streams requested')
 
+        # audio options
         if 'audio' not in opt or twopass == 1:
-            opt['audio'] = {'codec': None}
-
-        if 'video' not in opt:
-            opt['video'] = {'codec': None}
-
-        if 'audio' in opt:
-            x = opt['audio']
-
-            if not isinstance(x, dict) or 'codec' not in x:
+            opt_audio = {'codec': None}
+        else:
+            opt_audio = opt['audio']
+            if not isinstance(opt_audio, dict) or 'codec' not in opt_audio:
                 raise ConverterError('Invalid audio codec specification')
 
-            c = x['codec']
-            if c not in self.audio_codecs:
-                raise ConverterError('Requested unknown audio codec ' + str(c))
+        c = opt_audio['codec']
+        if c not in self.audio_codecs:
+            raise ConverterError('Requested unknown audio codec ' + str(c))
 
-            audio_options = self.audio_codecs[c]().parse_options(x)
-            if audio_options is None:
-                raise ConverterError('Unknown audio codec error')
+        audio_options = self.audio_codecs[c]().parse_options(opt_audio)
+        if audio_options is None:
+            raise ConverterError('Unknown audio codec error')
 
-        if 'video' in opt:
-            x = opt['video']
-            if not isinstance(x, dict) or 'codec' not in x:
+        # video options
+        if 'video' not in opt:
+            opt_video = {'codec': None}
+        else:
+            opt_video = opt['video']
+            if not isinstance(opt_video, dict) or 'codec' not in opt_video:
                 raise ConverterError('Invalid video codec specification')
 
-            c = x['codec']
-            if c not in self.video_codecs:
-                raise ConverterError('Requested unknown video codec ' + str(c))
+        c = opt_video['codec']
+        if c not in self.video_codecs:
+            raise ConverterError('Requested unknown video codec ' + str(c))
 
-            video_options = self.video_codecs[c]().parse_options(x)
-            if video_options is None:
-                raise ConverterError('Unknown video codec error')
+        video_options = self.video_codecs[c]().parse_options(opt_video)
+        if video_options is None:
+            raise ConverterError('Unknown video codec error')
 
+        # aggregate all options
         optlist = audio_options + video_options + format_options
 
         if twopass == 1:
@@ -167,7 +167,8 @@ class Converter(object):
             raise ConverterError('Source file has no audio or video streams')
 
         if info.video and 'video' in options:
-            v = options['video']
+            options = options.copy()
+            v = options['video'] = options['video'].copy()
             v['src_width'] = info.video.video_width
             v['src_height'] = info.video.video_height
 
