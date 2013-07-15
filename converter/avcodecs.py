@@ -338,6 +338,14 @@ class AacCodec(AudioCodec):
         return self.aac_experimental_enable
 
 
+class FdkAacCodec(AudioCodec):
+    """
+    AAC audio codec.
+    """
+    codec_name = 'libfdk_aac'
+    ffmpeg_codec_name = 'libfdk_aac'
+
+
 class H264Codec(VideoCodec):
     """
     H.264/AVC video codec.
@@ -445,7 +453,8 @@ class Mpeg2Codec(MpegCodec):
 
 
 audio_codec_list = [
-    AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec
+    AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec,
+    FdkAacCodec
 ]
 
 video_codec_list = [
