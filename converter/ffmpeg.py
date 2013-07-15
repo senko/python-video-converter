@@ -361,7 +361,7 @@ class FFMpeg(object):
 
         return info
 
-    def convert(self, infile, outfile, opts, timeout=10, yield_process=False):
+    def convert(self, infile, outfile, opts, timeout=10):
         """
         Convert the source media (infile) according to specified options
         (a list of ffmpeg switches as strings) and save it to outfile.
@@ -400,9 +400,6 @@ class FFMpeg(object):
             p = self._spawn(cmds)
         except OSError:
             raise FFMpegError('Error while calling ffmpeg binary')
-
-        if yield_process:
-            yield p
 
         yielded = False
         buf = ''

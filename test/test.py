@@ -152,11 +152,17 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(1, info.audio.audio_channels)
         self.assertEqual(11025, info.audio.audio_samplerate)
 
+    def test_ffmpeg_termination(self):
         # test when ffmpeg is killed
-        conv = f.convert('test1.ogg', self.video_file_path, convert_options,
-                         yield_process=True)
-        p = conv.next()  # get process object
+        f = ffmpeg.FFMpeg()
+        convert_options = [
+            '-acodec', 'libvorbis', '-ab', '16k', '-ac', '1', '-ar', '11025',
+             '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
+        p_list = {}  # modifiable object in closure
+        f._spawn = lambda *args: p_list.setdefault('', ffmpeg.FFMpeg._spawn(*args))
+        conv = f.convert('test1.ogg', self.video_file_path, convert_options)
         conv.next()  # let ffmpeg to start
+        p = p_list['']
         p.terminate()
         self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, list, conv)
 
