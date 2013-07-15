@@ -16,6 +16,24 @@ from os.path import join as pjoin
 from converter import ffmpeg, formats, avcodecs, Converter, ConverterError
 
 
+def verify_progress(p):
+    if not p:
+        return False
+
+    li = list(p)
+    if len(li) < 1:
+        return False
+
+    prev = 0
+    for i in li:
+        if type(i) != int or i < 0 or i > 100:
+            return False
+        if i < prev:
+            return False
+        prev = i
+    return True
+
+
 class TestFFMpeg(unittest.TestCase):
 
     def setUp(self):
@@ -111,7 +129,13 @@ class TestFFMpeg(unittest.TestCase):
         for tc in conv:
             assert (tc > last_tc and tc <= info.format.duration + 0.1), (last_tc, tc, info.format.duration)
 
+        self._assert_converted_video_file()
 
+    def _assert_converted_video_file(self):
+        """
+            Asserts converted test1.ogg (in path self.video_file_path) is converted correctly
+        """
+        f = ffmpeg.FFMpeg()
         info = f.probe(self.video_file_path)
         self.assertEqual('ogg', info.format.format)
         self.assertAlmostEqual(33.00, info.format.duration, places=0)
@@ -214,23 +238,6 @@ class TestFFMpeg(unittest.TestCase):
 
         c = Converter()
 
-        def verify_progress(p):
-            if not p:
-                return False
-
-            li = list(p)
-            if len(li) < 1:
-                return False
-
-            prev = 0
-            for i in li:
-                if type(i) != int or i < 0 or i > 100:
-                    return False
-                if i < prev:
-                    return False
-                prev = i
-            return True
-
         self.assertRaisesSpecific(ConverterError, c.parse_options, None)
         self.assertRaisesSpecific(ConverterError, c.parse_options, {})
         self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'foo'})
@@ -275,6 +282,24 @@ class TestFFMpeg(unittest.TestCase):
             })
 
         self.assertTrue(verify_progress(conv))
+
+    def test_converter_2pass(self):
+        c = Converter()
+        self.video_file_path = 'xx.ogg'
+        options = {
+            'format': 'ogg',
+            'audio': {'codec': 'vorbis', 'samplerate': 11025, 'channels': 1, 'bitrate': 16},
+            'video': {'codec': 'theora', 'bitrate': 128, 'width': 360, 'height': 200, 'fps': 15}
+        }
+        options_repr = repr(options)
+        conv = c.convert('test1.ogg', self.video_file_path, options, twopass=True)
+
+        verify_progress(conv)
+
+        # Convert should not change options dict
+        self.assertEquals(options_repr, repr(options))
+
+        self._assert_converted_video_file()
 
 
 if __name__ == '__main__':
