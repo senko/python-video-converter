@@ -211,25 +211,7 @@ class TestFFMpeg(unittest.TestCase):
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240 }))
 
     def test_converter(self):
-
         c = Converter()
-
-        def verify_progress(p):
-            if not p:
-                return False
-
-            li = list(p)
-            if len(li) < 1:
-                return False
-
-            prev = 0
-            for i in li:
-                if type(i) != int or i < 0 or i > 100:
-                    return False
-                if i < prev:
-                    return False
-                prev = i
-            return True
 
         self.assertRaisesSpecific(ConverterError, c.parse_options, None)
         self.assertRaisesSpecific(ConverterError, c.parse_options, {})
@@ -275,6 +257,36 @@ class TestFFMpeg(unittest.TestCase):
             })
 
         self.assertTrue(verify_progress(conv))
+
+    def test_converter_vp8_codec(self):
+        c = Converter()
+        conv = c.convert('test1.ogg', self.video_file_path, {
+            'format': 'webm',
+            'video': {
+                'codec': 'vp8', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
+            'audio': {
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32 }
+            })
+
+        self.assertTrue(verify_progress(conv))
+
+
+def verify_progress(p):
+    if not p:
+        return False
+
+    li = list(p)
+    if len(li) < 1:
+        return False
+
+    prev = 0
+    for i in li:
+        if type(i) != int or i < 0 or i > 100:
+            return False
+        if i < prev:
+            return False
+        prev = i
+    return True
 
 
 if __name__ == '__main__':
