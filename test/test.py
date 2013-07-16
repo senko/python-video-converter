@@ -258,6 +258,17 @@ class TestFFMpeg(unittest.TestCase):
 
         self.assertTrue(verify_progress(conv))
 
+    def test_converter_vp8_codec(self):
+        c = Converter()
+        conv = c.convert('test1.ogg', self.video_file_path, {
+            'format': 'webm',
+            'video': {
+                'codec': 'vp8', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
+            'audio': {
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32 }
+            })
+
+        self.assertTrue(verify_progress(conv))
 
 
 def verify_progress(p):
