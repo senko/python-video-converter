@@ -4,14 +4,10 @@ import os.path
 import os
 import re
 import signal
+from subprocess import Popen, PIPE
 import logging
 
 logger = logging.getLogger(__name__)
-
-try:
-    from subprocess import Popen, PIPE
-except:
-    Popen = None
 
 
 class FFMpegError(Exception):
@@ -322,15 +318,9 @@ class FFMpeg(object):
 
     @staticmethod
     def _spawn(cmds):
-        if Popen:
-            logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
-            p = Popen(cmds, shell=False,
-                stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                close_fds=True)
-            return (p.stdout, p.stderr)
-        else:
-            pin, pout, perr = os.popen3(cmds)
-            return (pout, perr)
+        logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
+        return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                     close_fds=True)
 
     def probe(self, fname):
         """
@@ -360,11 +350,11 @@ class FFMpeg(object):
 
         info = MediaInfo()
 
-        fd, _ = self._spawn([self.ffprobe_path,
+        p = self._spawn([self.ffprobe_path,
             '-show_format', '-show_streams', fname])
-        raw = fd.read()
+        stdout_data, _ = p.communicate()
 
-        info.parse_ffprobe(raw)
+        info.parse_ffprobe(stdout_data)
 
         if not info.format.format and len(info.streams) == 0:
             return None
@@ -407,7 +397,7 @@ class FFMpeg(object):
             signal.signal(signal.SIGALRM, on_sigalrm)
 
         try:
-            _, fd = self._spawn(cmds)
+            p = self._spawn(cmds)
         except OSError:
             raise FFMpegError('Error while calling ffmpeg binary')
 
@@ -419,7 +409,7 @@ class FFMpeg(object):
             if timeout:
                 signal.alarm(timeout)
 
-            ret = fd.read(10)
+            ret = p.stderr.read(10)
 
             if timeout:
                 signal.alarm(0)
@@ -448,23 +438,31 @@ class FFMpeg(object):
         if timeout:
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
+        p.communicate()  # wait for process to exit
+
         if total_output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
-        else:
-            if '\n' in total_output:
-                cmd = ' '.join(cmds)
-                line = total_output.split('\n')[-2]
 
-                if line.startswith(infile + ': '):
-                    err = line[len(infile) + 2:]
-                    raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                             err)
-                elif line.startswith('Error while '):
-                    raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                             line)
-                elif not yielded:
-                    raise FFMpegConvertError('Unknown ffmpeg error', cmd,
-                                             total_output, line)
+        if '\n' in total_output:
+            cmd = ' '.join(cmds)
+            line = total_output.split('\n')[-2]
+
+            if line.startswith('Received signal'):
+                # Received signal 15: terminating.
+                raise FFMpegConvertError(line.split(':')[0], cmd, total_output)
+            if line.startswith(infile + ': '):
+                err = line[len(infile) + 2:]
+                raise FFMpegConvertError('Encoding error', cmd, total_output,
+                                         err)
+            if line.startswith('Error while '):
+                raise FFMpegConvertError('Encoding error', cmd, total_output,
+                                         line)
+            if not yielded:
+                raise FFMpegConvertError('Unknown ffmpeg error', cmd,
+                                         total_output, line)
+        if p.returncode != 0:
+            raise FFMpegConvertError('Exited with code %d' % p.returncode, cmd,
+                                     total_output)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
         """
@@ -503,10 +501,10 @@ class FFMpeg(object):
                 '-q:v', str(FFMpeg.DEFAULT_JPEG_QUALITY if len(thumb) < 4 else str(thumb[3])),
             ])
 
-        _, fd = self._spawn(cmds)
-        output = fd.read()
-        if output == '':
+        p = self._spawn(cmds)
+        _, stderr_data = p.communicate()
+        if stderr_data == '':
             raise FFMpegError('Error while calling ffmpeg binary')
 
         if any(not os.path.exists(option[1]) for option in option_list):
-            raise FFMpegError('Error creating thumbnail: %s' % output)
+            raise FFMpegError('Error creating thumbnail: %s' % stderr_data)
