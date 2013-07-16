@@ -371,9 +371,13 @@ class H264Codec(VideoCodec):
     ffmpeg_codec_name = 'libx264'
     encoder_options = VideoCodec.encoder_options.copy()
     encoder_options.update({
-        'preset': str,
+        'preset': str,  # common presets are ultrafast, superfast, veryfast,
+                        # faster, fast, medium(default), slow, slower, veryslow
         'quality': int,  # constant rate factor, range:0(lossless)-51(worst)
                          # default:23, recommended: 18-28
+        # http://mewiki.project357.com/wiki/X264_Settings#profile
+        'profile': str,  # default: not-set, for valid values see above link
+        'tune': str,  # default: not-set, for valid values see above link
     })
 
     def _codec_specific_produce_ffmpeg_list(self, safe):
@@ -382,6 +386,10 @@ class H264Codec(VideoCodec):
             optlist.extend(['-preset', safe['preset']])
         if 'quality' in safe:
             optlist.extend(['-crf', safe['quality']])
+        if 'profile' in safe:
+            optlist.extend(['-profile', safe['profile']])
+        if 'tune' in safe:
+            optlist.extend(['-tune', safe['tune']])
         return optlist
 
 
