@@ -250,7 +250,6 @@ class TestFFMpeg(unittest.TestCase):
             c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240 }))
 
     def test_converter(self):
-
         c = Converter()
 
         self.assertRaisesSpecific(ConverterError, c.parse_options, None)
@@ -315,6 +314,18 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEquals(options_repr, repr(options))
 
         self._assert_converted_video_file()
+
+    def test_converter_vp8_codec(self):
+        c = Converter()
+        conv = c.convert('test1.ogg', self.video_file_path, {
+            'format': 'webm',
+            'video': {
+                'codec': 'vp8', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
+            'audio': {
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32 }
+            })
+
+        self.assertTrue(verify_progress(conv))
 
 
 if __name__ == '__main__':

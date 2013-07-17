@@ -313,17 +313,41 @@ class VideoCopyCodec(BaseCodec):
 class VorbisCodec(AudioCodec):
     """
     Vorbis audio codec.
+    @see http://ffmpeg.org/trac/ffmpeg/wiki/TheoraVorbisEncodingGuide
     """
     codec_name = 'vorbis'
     ffmpeg_codec_name = 'libvorbis'
+    encoder_options = AudioCodec.encoder_options.copy()
+    encoder_options.update({
+        'quality': int,  # audio quality. Range is 0-10(highest quality)
+                         # 3-6 is a good range to try. Default is 3
+    })
+
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'quality' in safe:
+            optlist.extend(['-qscale:a', safe['quality']])
+        return optlist
 
 
 class TheoraCodec(VideoCodec):
     """
     Theora video codec.
+    @see http://ffmpeg.org/trac/ffmpeg/wiki/TheoraVorbisEncodingGuide
     """
     codec_name = 'theora'
     ffmpeg_codec_name = 'libtheora'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'quality': int,  # audio quality. Range is 0-10(highest quality)
+                         # 5-7 is a good range to try (default is 200k bitrate)
+    })
+
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'quality' in safe:
+            optlist.extend(['-qscale:v', safe['quality']])
+        return optlist
 
 
 class AacCodec(AudioCodec):
@@ -349,18 +373,32 @@ class FdkAacCodec(AudioCodec):
 class H264Codec(VideoCodec):
     """
     H.264/AVC video codec.
+    @see http://ffmpeg.org/trac/ffmpeg/wiki/x264EncodingGuide
     """
     codec_name = 'h264'
     ffmpeg_codec_name = 'libx264'
-
-    x264_voodoo_recipe_ipod = ("-flags +loop -cmp chroma " +
-        "-partitions +parti4x4+partp8x8+partb8x8 -subq 5 -trellis 1 " +
-        "-refs 1 -coder 0 -me_range 16 -g 300 -keyint_min 25 " +
-        "-sc_threshold 40 -i_qfactor 0.71 -rc_eq 'blurCplx^(1-qComp)' " +
-        "-qcomp 0.6 -qmin 10 -qmax 51 -qdiff 4 -level 30")
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'preset': str,  # common presets are ultrafast, superfast, veryfast,
+                        # faster, fast, medium(default), slow, slower, veryslow
+        'quality': int,  # constant rate factor, range:0(lossless)-51(worst)
+                         # default:23, recommended: 18-28
+        # http://mewiki.project357.com/wiki/X264_Settings#profile
+        'profile': str,  # default: not-set, for valid values see above link
+        'tune': str,  # default: not-set, for valid values see above link
+    })
 
     def _codec_specific_produce_ffmpeg_list(self, safe):
-        return self.x264_voodoo_recipe_ipod.split(' ')
+        optlist = []
+        if 'preset' in safe:
+            optlist.extend(['-preset', safe['preset']])
+        if 'quality' in safe:
+            optlist.extend(['-crf', safe['quality']])
+        if 'profile' in safe:
+            optlist.extend(['-profile', safe['profile']])
+        if 'tune' in safe:
+            optlist.extend(['-tune', safe['tune']])
+        return optlist
 
 
 class Mp3Codec(AudioCodec):
@@ -392,7 +430,7 @@ class Vp8Codec(VideoCodec):
     Google VP8 video codec.
     """
     codec_name = 'vp8'
-    ffmpeg_codec_name = 'vp8'
+    ffmpeg_codec_name = 'libvpx'
 
 
 class H263Codec(VideoCodec):
