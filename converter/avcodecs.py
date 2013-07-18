@@ -135,7 +135,7 @@ class VideoCodec(BaseCodec):
         # If we don't have source info, we don't try to calculate
         # aspect corrections
         if not sw or not sh:
-            return (w, h, None)
+            return w, h, None
 
         # Original aspect ratio
         aspect = (1.0 * sw) / (1.0 * sh)
@@ -143,21 +143,21 @@ class VideoCodec(BaseCodec):
         # If we have only one dimension, we can easily calculate
         # the other to match the source aspect ratio
         if not w and not h:
-            return (w, h, None)
+            return w, h, None
         elif w and not h:
             h = int((1.0 * w) / aspect)
-            return (w, h, None)
+            return w, h, None
         elif h and not w:
             w = int(aspect * h)
-            return (w, h, None)
+            return w, h, None
 
         # If source and target dimensions are actually the same aspect
         # ratio, we've got nothing to do
         if int(aspect * h) == w:
-            return (w, h, None)
+            return w, h, None
 
         if mode == 'stretch':
-            return (w, h, None)
+            return w, h, None
 
         target_aspect = (1.0 * w) / (1.0 * h)
 
@@ -167,12 +167,12 @@ class VideoCodec(BaseCodec):
                 h0 = int(w / aspect)
                 assert h0 > h, (sw, sh, w, h)
                 dh = (h0 - h) / 2
-                return (w, h0, 'crop=%d:%d:0:%d' % (w, h, dh))
+                return w, h0, 'crop=%d:%d:0:%d' % (w, h, dh)
             else:  # source is wider, need to crop left/right
                 w0 = int(h * aspect)
                 assert w0 > w, (sw, sh, w, h)
                 dw = (w0 - w) / 2
-                return (w0, h, 'crop=%d:%d:%d:0' % (w, h, dw))
+                return w0, h, 'crop=%d:%d:%d:0' % (w, h, dw)
 
         if mode == 'pad':
             # target is taller, need to pad top/bottom
@@ -180,12 +180,12 @@ class VideoCodec(BaseCodec):
                 h1 = int(w / aspect)
                 assert h1 < h, (sw, sh, w, h)
                 dh = (h - h1) / 2
-                return (w, h1, 'pad=%d:%d:0:%d' % (w, h, dh)) #FIXED
+                return w, h1, 'pad=%d:%d:0:%d' % (w, h, dh)  # FIXED
             else:  # target is wider, need to pad left/right
                 w1 = int(h * aspect)
                 assert w1 < w, (sw, sh, w, h)
                 dw = (w - w1) / 2
-                return (w1, h, 'pad=%d:%d:%d:0' % (w, h, dw)) #FIXED
+                return w1, h, 'pad=%d:%d:%d:0' % (w, h, dw)  # FIXED
 
         assert False, mode
 
@@ -219,7 +219,6 @@ class VideoCodec(BaseCodec):
 
         sw = None
         sh = None
-        aspect = None
 
         if 'src_width' in safe and 'src_height' in safe:
             sw = safe['src_width']
@@ -227,15 +226,13 @@ class VideoCodec(BaseCodec):
             if not sw or not sh:
                 sw = None
                 sh = None
-            else:
-                aspect = (1.0 * sw) / (1.0 * sh)
 
         mode = 'stretch'
         if 'mode' in safe:
             if safe['mode'] in ['stretch', 'crop', 'pad']:
                 mode = safe['mode']
 
-        ow, oh = w, h # FIXED
+        ow, oh = w, h  # FIXED
         w, h, filters = self._aspect_corrections(sw, sh, w, h, mode)
 
         safe['width'] = w
@@ -255,7 +252,7 @@ class VideoCodec(BaseCodec):
         if 'fps' in safe:
             optlist.extend(['-r', str(safe['fps'])])
         if 'bitrate' in safe:
-            optlist.extend(['-vb', str(safe['bitrate']) + 'k']) # FIXED
+            optlist.extend(['-vb', str(safe['bitrate']) + 'k'])  # FIXED
         if w and h:
             optlist.extend(['-s', '%dx%d' % (w, h)])
 
@@ -297,7 +294,7 @@ class AudioCopyCodec(BaseCodec):
     codec_name = 'copy'
 
     def parse_options(self, opt):
-            return ['-acodec', 'copy']
+        return ['-acodec', 'copy']
 
 
 class VideoCopyCodec(BaseCodec):
@@ -307,7 +304,7 @@ class VideoCopyCodec(BaseCodec):
     codec_name = 'copy'
 
     def parse_options(self, opt):
-            return ['-vcodec', 'copy']
+        return ['-vcodec', 'copy']
 
 
 class VorbisCodec(AudioCodec):
@@ -320,7 +317,7 @@ class VorbisCodec(AudioCodec):
     encoder_options = AudioCodec.encoder_options.copy()
     encoder_options.update({
         'quality': int,  # audio quality. Range is 0-10(highest quality)
-                         # 3-6 is a good range to try. Default is 3
+        # 3-6 is a good range to try. Default is 3
     })
 
     def _codec_specific_produce_ffmpeg_list(self, safe):
@@ -340,7 +337,7 @@ class TheoraCodec(VideoCodec):
     encoder_options = VideoCodec.encoder_options.copy()
     encoder_options.update({
         'quality': int,  # audio quality. Range is 0-10(highest quality)
-                         # 5-7 is a good range to try (default is 200k bitrate)
+        # 5-7 is a good range to try (default is 200k bitrate)
     })
 
     def _codec_specific_produce_ffmpeg_list(self, safe):
@@ -380,9 +377,9 @@ class H264Codec(VideoCodec):
     encoder_options = VideoCodec.encoder_options.copy()
     encoder_options.update({
         'preset': str,  # common presets are ultrafast, superfast, veryfast,
-                        # faster, fast, medium(default), slow, slower, veryslow
+        # faster, fast, medium(default), slow, slower, veryslow
         'quality': int,  # constant rate factor, range:0(lossless)-51(worst)
-                         # default:23, recommended: 18-28
+        # default:23, recommended: 18-28
         # http://mewiki.project357.com/wiki/X264_Settings#profile
         'profile': str,  # default: not-set, for valid values see above link
         'tune': str,  # default: not-set, for valid values see above link
