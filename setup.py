@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from distutils.core import setup, Command
-from unittest import TextTestRunner, TestLoader
 import os
-import os.path
+
 
 class TestCommand(Command):
     user_options = []
@@ -20,6 +19,7 @@ class TestCommand(Command):
         if retval != 0:
             raise Exception('tests failed')
 
+
 class DocCommand(Command):
     user_options = []
 
@@ -33,19 +33,20 @@ class DocCommand(Command):
         os.chdir(self._docdir)
         os.system('make html')
 
+
 setup(
-    name = 'VideoConverter',
-    version = '1.1.0',
-    description = 'Video Converter library',
-    url = 'https://github.com/senko/python-video-converter/',
+    name='VideoConverter',
+    version='1.1.0',
+    description='Video Converter library',
+    url='https://github.com/senko/python-video-converter/',
 
-    author = 'Senko Rasic',
-    author_email = 'senko.rasic@dobarkod.hr',
+    author='Senko Rasic',
+    author_email='senko.rasic@dobarkod.hr',
 
-    cmdclass = {
+    cmdclass={
         'test': TestCommand,
         'doc': DocCommand
     },
 
-    packages = [ 'converter' ],
+    packages=['converter'],
 )

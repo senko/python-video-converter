@@ -2,6 +2,7 @@
 
 # modify the path so that parent directory is in it
 import sys
+
 sys.path.append('../')
 
 import random
@@ -9,8 +10,6 @@ import string
 import shutil
 import unittest
 import os
-import os.path
-import datetime
 from os.path import join as pjoin
 
 from converter import ffmpeg, formats, avcodecs, Converter, ConverterError
@@ -35,7 +34,6 @@ def verify_progress(p):
 
 
 class TestFFMpeg(unittest.TestCase):
-
     def setUp(self):
         current_dir = os.path.abspath(os.path.dirname(__file__))
         temp_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
@@ -68,7 +66,7 @@ class TestFFMpeg(unittest.TestCase):
 
     def test_ffmpeg_probe(self):
         self.assertRaisesSpecific(ffmpeg.FFMpegError, ffmpeg.FFMpeg,
-            ffmpeg_path='/foo', ffprobe_path='/bar')
+                                  ffmpeg_path='/foo', ffprobe_path='/bar')
 
         f = ffmpeg.FFMpeg()
 
@@ -100,11 +98,11 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(a.metadata['ENCODER'], 'ffmpeg2theora 0.19')
 
         self.assertEqual(repr(info), 'MediaInfo(format='
-            'MediaFormatInfo(format=ogg, duration=33.00), streams=['
-            'MediaStreamInfo(type=video, codec=theora, width=720, '
-            'height=400, fps=25.0, ENCODER=ffmpeg2theora 0.19), '
-            'MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000, '
-            'bitrate=80000, ENCODER=ffmpeg2theora 0.19)])')
+                                     'MediaFormatInfo(format=ogg, duration=33.00), streams=['
+                                     'MediaStreamInfo(type=video, codec=theora, width=720, '
+                                     'height=400, fps=25.0, ENCODER=ffmpeg2theora 0.19), '
+                                     'MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000, '
+                                     'bitrate=80000, ENCODER=ffmpeg2theora 0.19)])')
 
     def test_ffmpeg_convert(self):
         f = ffmpeg.FFMpeg()
@@ -113,21 +111,21 @@ class TestFFMpeg(unittest.TestCase):
             return list(fn(*args, **kwargs))
 
         self.assertRaisesSpecific(ffmpeg.FFMpegError, consume,
-            f.convert, 'nonexistent', self.video_file_path, [])
+                                  f.convert, 'nonexistent', self.video_file_path, [])
 
         self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, consume,
-            f.convert, '/etc/passwd', self.video_file_path, [])
+                                  f.convert, '/etc/passwd', self.video_file_path, [])
 
         info = f.probe('test1.ogg')
 
         convert_options = [
             '-acodec', 'libvorbis', '-ab', '16k', '-ac', '1', '-ar', '11025',
-             '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
+            '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
         conv = f.convert('test1.ogg', self.video_file_path, convert_options)
 
         last_tc = 0.0
         for tc in conv:
-            assert (tc > last_tc and tc <= info.format.duration + 0.1), (last_tc, tc, info.format.duration)
+            assert (last_tc < tc <= info.format.duration + 0.1), (last_tc, tc, info.format.duration)
 
         self._assert_converted_video_file()
 
@@ -157,7 +155,7 @@ class TestFFMpeg(unittest.TestCase):
         f = ffmpeg.FFMpeg()
         convert_options = [
             '-acodec', 'libvorbis', '-ab', '16k', '-ac', '1', '-ar', '11025',
-             '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
+            '-vcodec', 'libtheora', '-r', '15', '-s', '360x200', '-b', '128k']
         p_list = {}  # modifiable object in closure
         f._spawn = lambda *args: p_list.setdefault('', ffmpeg.FFMpeg._spawn(*args))
         conv = f.convert('test1.ogg', self.video_file_path, convert_options)
@@ -165,7 +163,6 @@ class TestFFMpeg(unittest.TestCase):
         p = p_list['']
         p.terminate()
         self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, list, conv)
-
 
     def test_ffmpeg_thumbnail(self):
         f = ffmpeg.FFMpeg()
@@ -203,51 +200,52 @@ class TestFFMpeg(unittest.TestCase):
         c = avcodecs.BaseCodec()
         self.assertRaisesSpecific(ValueError, c.parse_options, {})
 
-        c.encoder_options = { 'foo': int, 'bar': bool }
-        self.assertEqual({}, c.safe_options({ 'baz': 1, 'quux': 1, 'foo': 'w00t'}))
-        self.assertEqual({'foo':42,'bar':False}, c.safe_options({'foo':'42','bar':0}))
+        c.encoder_options = {'foo': int, 'bar': bool}
+        self.assertEqual({}, c.safe_options({'baz': 1, 'quux': 1, 'foo': 'w00t'}))
+        self.assertEqual({'foo': 42, 'bar': False}, c.safe_options({'foo': '42', 'bar': 0}))
 
         c = avcodecs.AudioCodec()
         c.codec_name = 'doctest'
         c.ffmpeg_codec_name = 'doctest'
 
         self.assertEqual(['-acodec', 'doctest'],
-            c.parse_options({'codec': 'doctest', 'channels': 0, 'bitrate': 0, 'samplerate': 0}))
+                         c.parse_options({'codec': 'doctest', 'channels': 0, 'bitrate': 0, 'samplerate': 0}))
 
         self.assertEqual(['-acodec', 'doctest', '-ac', '1', '-ab', '64k', '-ar', '44100'],
-            c.parse_options({'codec': 'doctest', 'channels': '1', 'bitrate': '64', 'samplerate': '44100'}))
+                         c.parse_options({'codec': 'doctest', 'channels': '1', 'bitrate': '64', 'samplerate': '44100'}))
 
         c = avcodecs.VideoCodec()
         c.codec_name = 'doctest'
         c.ffmpeg_codec_name = 'doctest'
 
         self.assertEqual(['-vcodec', 'doctest'],
-            c.parse_options({'codec': 'doctest', 'fps': 0, 'bitrate': 0, 'width': 0, 'height': '480' }))
+                         c.parse_options({'codec': 'doctest', 'fps': 0, 'bitrate': 0, 'width': 0, 'height': '480'}))
 
         self.assertEqual(['-vcodec', 'doctest', '-r', '25', '-vb', '300k', '-s', '320x240', '-aspect', '320:240'],
-            c.parse_options({'codec': 'doctest', 'fps': '25', 'bitrate': '300', 'width': 320, 'height': 240 }))
+                         c.parse_options(
+                             {'codec': 'doctest', 'fps': '25', 'bitrate': '300', 'width': 320, 'height': 240}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '384x240', '-aspect', '320:240', '-vf', 'crop=320:240:32:0'],
-            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'crop',
-                'width': 320, 'height': 240 }))
+                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'crop',
+                                          'width': 320, 'height': 240}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x240', '-aspect', '320:200', '-vf', 'crop=320:200:0:20'],
-            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'crop',
-                'width': 320, 'height': 200 }))
+                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'crop',
+                                          'width': 320, 'height': 200}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x200', '-aspect', '320:240', '-vf', 'pad=320:240:0:20'],
-            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'pad',
-                'width': 320, 'height': 240 }))
+                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 400, 'mode': 'pad',
+                                          'width': 320, 'height': 240}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '266x200', '-aspect', '320:200', '-vf', 'pad=320:200:27:0'],
-            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'pad',
-                'width': 320, 'height': 200 }))
+                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'mode': 'pad',
+                                          'width': 320, 'height': 200}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x240'],
-            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'width': 320 }))
+                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'width': 320}))
 
         self.assertEqual(['-vcodec', 'doctest', '-s', '320x240'],
-            c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240 }))
+                         c.parse_options({'codec': 'doctest', 'src_width': 640, 'src_height': 480, 'height': 240}))
 
     def test_converter(self):
         c = Converter()
@@ -260,12 +258,12 @@ class TestFFMpeg(unittest.TestCase):
         self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'ogg', 'video': 'whatever'})
         self.assertRaisesSpecific(ConverterError, c.parse_options, {'format': 'ogg', 'audio': {}})
         self.assertRaisesSpecific(ConverterError, c.parse_options,
-            {'format': 'ogg', 'audio': {'codec': 'bogus'}})
+                                  {'format': 'ogg', 'audio': {'codec': 'bogus'}})
 
         self.assertEqual(['-an', '-vcodec', 'libtheora', '-r', '25', '-f', 'ogg'],
-            c.parse_options({'format':'ogg','video':{'codec':'theora','fps':25}}))
+                         c.parse_options({'format': 'ogg', 'video': {'codec': 'theora', 'fps': 25}}))
         self.assertEqual(['-acodec', 'copy', '-vcodec', 'copy', '-f', 'ogg'],
-            c.parse_options({'format':'ogg','audio':{'codec':'copy'},'video':{'codec':'copy'}}))
+                         c.parse_options({'format': 'ogg', 'audio': {'codec': 'copy'}, 'video': {'codec': 'copy'}}))
 
         info = c.probe('test1.ogg')
         self.assertEqual('theora', info.video.codec)
@@ -282,18 +280,18 @@ class TestFFMpeg(unittest.TestCase):
         conv = c.convert('test1.ogg', self.video_file_path, {
             'format': 'ogg',
             'video': {
-                'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
+                'codec': 'theora', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
             'audio': {
-                'codec': 'vorbis', 'channels': 1, 'bitrate': 32 }
-            })
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
+        })
 
         self.assertTrue(verify_progress(conv))
 
         conv = c.convert('test.aac', self.audio_file_path, {
             'format': 'mp3',
             'audio': {
-                'codec': 'mp3', 'channels': 1, 'bitrate': 32 }
-            })
+                'codec': 'mp3', 'channels': 1, 'bitrate': 32}
+        })
 
         self.assertTrue(verify_progress(conv))
 
@@ -320,10 +318,10 @@ class TestFFMpeg(unittest.TestCase):
         conv = c.convert('test1.ogg', self.video_file_path, {
             'format': 'webm',
             'video': {
-                'codec': 'vp8', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300 },
+                'codec': 'vp8', 'width': 160, 'height': 120, 'fps': 15, 'bitrate': 300},
             'audio': {
-                'codec': 'vorbis', 'channels': 1, 'bitrate': 32 }
-            })
+                'codec': 'vorbis', 'channels': 1, 'bitrate': 32}
+        })
 
         self.assertTrue(verify_progress(conv))
 

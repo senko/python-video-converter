@@ -1,12 +1,9 @@
 #!/usr/bin/python
 
-
 import os
-import os.path
 
 from avcodecs import video_codec_list, audio_codec_list
 from formats import format_list
-
 from ffmpeg import FFMpeg, FFMpegError, FFMpegConvertError
 
 
@@ -27,7 +24,7 @@ class Converter(object):
         """
 
         self.ffmpeg = FFMpeg(ffmpeg_path=ffmpeg_path,
-            ffprobe_path=ffprobe_path)
+                             ffprobe_path=ffprobe_path)
         self.video_codecs = {}
         self.audio_codecs = {}
         self.formats = {}
@@ -48,10 +45,6 @@ class Converter(object):
         """
         Parse format/codec options and prepare raw ffmpeg option list.
         """
-        format_options = None
-        audio_options = []
-        video_options = []
-
         if not isinstance(opt, dict):
             raise ConverterError('Invalid output specification')
 
@@ -143,7 +136,7 @@ class Converter(object):
         timeout is handled (using signals) has special restriction when
         using threads.
 
-        >>> conv = c.convert('test1.ogg', '/tmp/output.mkv', {
+        >>> conv = Converter().convert('test1.ogg', '/tmp/output.mkv', {
         ...    'format': 'mkv',
         ...    'audio': { 'codec': 'aac' },
         ...    'video': { 'codec': 'h264' }
@@ -178,17 +171,17 @@ class Converter(object):
         if twopass:
             optlist1 = self.parse_options(options, 1)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
-                    timeout=timeout):
+                                                timeout=timeout):
                 yield int((50.0 * timecode) / info.format.duration)
 
             optlist2 = self.parse_options(options, 2)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
-                    timeout=timeout):
+                                                timeout=timeout):
                 yield int(50.0 + (50.0 * timecode) / info.format.duration)
         else:
             optlist = self.parse_options(options, twopass)
             for timecode in self.ffmpeg.convert(infile, outfile, optlist,
-                    timeout=timeout):
+                                                timeout=timeout):
                 yield int((100.0 * timecode) / info.format.duration)
 
     def probe(self, fname):
