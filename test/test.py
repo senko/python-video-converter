@@ -327,6 +327,23 @@ class TestFFMpeg(unittest.TestCase):
 
         self.assertTrue(verify_progress(conv))
 
+    def test_probe_audio_poster(self):
+        c = Converter()
+
+        info = c.probe('test.mp3', posters_as_video=True)
+        self.assertIsNotNone(info.video)
+        self.assertEqual(info.video.attached_pic, 1)
+
+        info = c.probe('test.mp3', posters_as_video=False)
+        self.assertIsNone(info.video)
+        self.assertEqual(len(info.posters), 1)
+        poster = info.posters[0]
+        self.assertEqual(poster.type, 'video')
+        self.assertEqual(poster.codec, 'png')
+        self.assertEqual(poster.video_width, 32)
+        self.assertEqual(poster.video_height, 32)
+        self.assertEqual(poster.attached_pic, 1)
+
 
 if __name__ == '__main__':
     unittest.main()

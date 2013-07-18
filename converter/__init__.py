@@ -191,12 +191,15 @@ class Converter(object):
                     timeout=timeout):
                 yield int((100.0 * timecode) / info.format.duration)
 
-    def probe(self, fname):
+    def probe(self, fname, posters_as_video=True):
         """
         Examine the media file. See the documentation of
         converter.FFMpeg.probe() for details.
+
+        @param posters_as_video: Take poster images (mainly for audio files) as
+            A video stream, defaults to True
         """
-        return self.ffmpeg.probe(fname)
+        return self.ffmpeg.probe(fname, posters_as_video)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=FFMpeg.DEFAULT_JPEG_QUALITY):
         """
