@@ -43,6 +43,7 @@ class FFMpegConvertError(Exception):
     def __str__(self):
         return self.__repr__()
 
+
 class MediaFormatInfo(object):
     """
     Describes the media container format. The attributes are:
@@ -77,7 +78,7 @@ class MediaFormatInfo(object):
 
     def __repr__(self):
         return 'MediaFormatInfo(format=%s, duration=%.2f)' % (self.format,
-            self.duration)
+                                                              self.duration)
 
 
 class MediaStreamInfo(object):
@@ -182,7 +183,6 @@ class MediaStreamInfo(object):
                     self.video_fps = self.parse_float(val)
 
     def __repr__(self):
-        value = ''
         d = ''
         metadata_str = ['%s=%s' % (key, value) for key, value
                         in self.metadata.items()]
@@ -201,7 +201,7 @@ class MediaStreamInfo(object):
         if self.metadata:
             value = 'MediaStreamInfo(%s, %s)' % (d, metadata_str)
         else:
-            value = 'MediaStreamInfo(%s)' % (d)
+            value = 'MediaStreamInfo(%s)' % d
 
         return value
 
@@ -250,7 +250,7 @@ class MediaInfo(object):
 
     def __repr__(self):
         return 'MediaInfo(format=%s, streams=%s)' % (repr(self.format),
-            repr(self.streams))
+                                                     repr(self.streams))
 
     @property
     def video(self):
@@ -328,7 +328,7 @@ class FFMpeg(object):
         Returns the MediaInfo object, or None if the specified file is
         not a valid media file.
 
-        >>> info = f.probe('test1.ogg')
+        >>> info = FFMpeg().probe('test1.ogg')
         >>> info.format
         'ogg'
         >>> info.duration
@@ -351,7 +351,7 @@ class FFMpeg(object):
         info = MediaInfo()
 
         p = self._spawn([self.ffprobe_path,
-            '-show_format', '-show_streams', fname])
+                         '-show_format', '-show_streams', fname])
         stdout_data, _ = p.communicate()
 
         info.parse_ffprobe(stdout_data)
@@ -376,7 +376,7 @@ class FFMpeg(object):
         the documentation in Converter.convert() for more details about this
         option.
 
-        >>> conv = f.convert('test.ogg', '/tmp/output.mp3',
+        >>> conv = FFMpeg().convert('test.ogg', '/tmp/output.mp3',
         ...    ['-acodec libmp3lame', '-vn'])
         >>> for timecode in conv:
         ...    pass # can be used to inform the user about conversion progress
@@ -390,7 +390,7 @@ class FFMpeg(object):
         cmds.extend(['-y', outfile])
 
         if timeout:
-            def on_sigalrm(*args):
+            def on_sigalrm(*_):
                 signal.signal(signal.SIGALRM, signal.SIG_DFL)
                 raise Exception('timed out while waiting for ffmpeg')
 
@@ -426,7 +426,6 @@ class FFMpeg(object):
                 if len(tmp) == 1:
                     timespec = tmp[0]
                     if ':' in timespec:
-                        parts = timespec.split(':')
                         timecode = 0
                         for part in timespec.split(':'):
                             timecode = 60 * timecode + float(part)
@@ -443,8 +442,8 @@ class FFMpeg(object):
         if total_output == '':
             raise FFMpegError('Error while calling ffmpeg binary')
 
+        cmd = ' '.join(cmds)
         if '\n' in total_output:
-            cmd = ' '.join(cmds)
             line = total_output.split('\n')[-2]
 
             if line.startswith('Received signal'):
@@ -473,7 +472,7 @@ class FFMpeg(object):
         @param quality: quality of jpeg file in range 2(best)-31(worst)
             recommended range: 2-6
 
-        >>> f.thumbnail('test1.ogg', 5, '/tmp/shot.png', '320x240')
+        >>> FFMpeg().thumbnail('test1.ogg', 5, '/tmp/shot.png', '320x240')
         """
         return self.thumbnails(fname, [(time, outfile, size, quality)])
 
@@ -484,8 +483,8 @@ class FFMpeg(object):
             (time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY)
             see documentation of `converter.FFMpeg.thumbnail()` for details.
 
-        >>> f.thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
-        >>>                            (10, '/tmp/shot2.png', None, 5)])
+        >>> FFMpeg().thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
+        >>>                                   (10, '/tmp/shot2.png', None, 5)])
         """
         if not os.path.exists(fname):
             raise IOError('No such file: ' + fname)
