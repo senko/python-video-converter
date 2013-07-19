@@ -92,6 +92,7 @@ class MediaStreamInfo(object):
       * duration - stream duration in seconds
       * metadata - optional metadata associated with a video or audio stream
       * bitrate - stream bitrate in bytes/second
+      * attached_pic - (0, 1 or None) is stream a poster image? (e.g. in mp3)
     Video-specific attributes are:
       * video_width - width of video in pixels
       * video_height - height of video in pixels
@@ -113,6 +114,7 @@ class MediaStreamInfo(object):
         self.video_fps = None
         self.audio_channels = None
         self.audio_samplerate = None
+        self.attached_pic = None
         self.metadata = {}
 
     @staticmethod
@@ -154,6 +156,8 @@ class MediaStreamInfo(object):
             self.audio_channels = self.parse_int(val)
         elif key == 'sample_rate':
             self.audio_samplerate = self.parse_float(val)
+        elif key == 'DISPOSITION:attached_pic':
+            self.attached_pic = self.parse_int(val)
 
         if key.startswith('TAG:'):
             key = key.split('TAG:')[1]
@@ -214,8 +218,13 @@ class MediaInfo(object):
       * streams - a list of MediaStreamInfo objects
     """
 
-    def __init__(self):
+    def __init__(self, posters_as_video=True):
+        """
+        :param posters_as_video: Take poster images (mainly for audio files) as
+            A video stream, defaults to True
+        """
         self.format = MediaFormatInfo()
+        self.posters_as_video = posters_as_video
         self.streams = []
 
     def parse_ffprobe(self, raw):
@@ -258,9 +267,14 @@ class MediaInfo(object):
         First video stream, or None if there are no video streams.
         """
         for s in self.streams:
-            if s.type == 'video':
+            if s.type == 'video' and (self.posters_as_video
+                                      or not s.attached_pic):
                 return s
         return None
+
+    @property
+    def posters(self):
+        return [s for s in self.streams if s.attached_pic]
 
     @property
     def audio(self):
@@ -322,7 +336,7 @@ class FFMpeg(object):
         return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
                      close_fds=True)
 
-    def probe(self, fname):
+    def probe(self, fname, posters_as_video=True):
         """
         Examine the media file and determine its format and media streams.
         Returns the MediaInfo object, or None if the specified file is
@@ -343,12 +357,14 @@ class FFMpeg(object):
         'vorbis'
         >>> info.audio.channels
         2
+        :param posters_as_video: Take poster images (mainly for audio files) as
+            A video stream, defaults to True
         """
 
         if not os.path.exists(fname):
             return None
 
-        info = MediaInfo()
+        info = MediaInfo(posters_as_video)
 
         p = self._spawn([self.ffprobe_path,
                          '-show_format', '-show_streams', fname])
