@@ -331,11 +331,11 @@ class TestFFMpeg(unittest.TestCase):
         c = Converter()
 
         info = c.probe('test.mp3', posters_as_video=True)
-        self.assertIsNotNone(info.video)
+        self.assertNotEqual(None, info.video)
         self.assertEqual(info.video.attached_pic, 1)
 
         info = c.probe('test.mp3', posters_as_video=False)
-        self.assertIsNone(info.video)
+        self.assertEqual(None, info.video)
         self.assertEqual(len(info.posters), 1)
         poster = info.posters[0]
         self.assertEqual(poster.type, 'video')
