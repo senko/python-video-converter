@@ -196,7 +196,7 @@ class Converter(object):
         Examine the media file. See the documentation of
         converter.FFMpeg.probe() for details.
 
-        @param posters_as_video: Take poster images (mainly for audio files) as
+        :param posters_as_video: Take poster images (mainly for audio files) as
             A video stream, defaults to True
         """
         return self.ffmpeg.probe(fname, posters_as_video)

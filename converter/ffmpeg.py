@@ -220,7 +220,7 @@ class MediaInfo(object):
 
     def __init__(self, posters_as_video=True):
         """
-        @param posters_as_video: Take poster images (mainly for audio files) as
+        :param posters_as_video: Take poster images (mainly for audio files) as
             A video stream, defaults to True
         """
         self.format = MediaFormatInfo()
@@ -357,7 +357,7 @@ class FFMpeg(object):
         'vorbis'
         >>> info.audio.channels
         2
-        @param posters_as_video: Take poster images (mainly for audio files) as
+        :param posters_as_video: Take poster images (mainly for audio files) as
             A video stream, defaults to True
         """
 
