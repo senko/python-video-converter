@@ -398,6 +398,22 @@ class H264Codec(VideoCodec):
         return optlist
 
 
+class Ac3Codec(AudioCodec):
+    """
+    AC3 audio codec.
+    """
+    codec_name = 'ac3'
+    ffmpeg_codec_name = 'ac3'
+
+
+class DtsCodec(AudioCodec):
+    """
+    DTS audio codec.
+    """
+    codec_name = 'dts'
+    ffmpeg_codec_name = 'dts'
+
+
 class Mp3Codec(AudioCodec):
     """
     MP3 (MPEG layer 3) audio codec.
@@ -489,7 +505,7 @@ class Mpeg2Codec(MpegCodec):
 
 audio_codec_list = [
     AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec,
-    FdkAacCodec
+    FdkAacCodec, Ac3Codec, DtsCodec
 ]
 
 video_codec_list = [
