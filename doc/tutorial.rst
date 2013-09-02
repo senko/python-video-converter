@@ -65,8 +65,7 @@ The options dictionary looks like this::
             'fps': 15
         },
         'subtitle': {
-            'codec': 'mov_text',
-            'language': 'ger'
+            'codec': 'copy'
         },
         'map': 0
     }
