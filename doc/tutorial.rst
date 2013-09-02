@@ -63,7 +63,12 @@ The options dictionary looks like this::
             'width': 720,
             'height': 400,
             'fps': 15
-        }
+        },
+        'subtitle': {
+            'codec': 'mov_text',
+            'language': 'ger'
+        },
+        'map': 0
     }
 
 The full list of options can be found in :class:`Converter` documentation.
