@@ -91,6 +91,58 @@ class AudioCodec(BaseCodec):
         return optlist
 
 
+class SubtitleCodec(BaseCodec):
+    """
+    Base subtitle codec class handles general subtitle options. Possible
+    parameters are:
+      * codec (string) - subtitle codec name (mov_text only one supported currently)
+      * language (string) - language of audio stream (3 char code)
+      * forced (int) - force subtitles (1 true, 0 false)
+      * default (int) - default subtitles (1 true, 0 false)
+
+    Supported subtitle codecs are: null (no subtitle), mov_text
+    """
+
+    encoder_options = {
+        'codec': str,
+        'language': str,
+        'forced': int,
+        'default': int
+    }
+
+    def parse_options(self, opt):
+        super(SubtitleCodec, self).parse_options(opt)
+        safe = self.safe_options(opt)
+
+        if 'forced' in safe:
+            f = safe['forced']
+            if f < 0 or f > 1:
+                del safe['forced']
+
+        if 'default' in safe:
+            d = safe['default']
+            if d < 0 or d > 1:
+                del safe['default']
+
+        if 'language' in safe:
+            l = safe['language']
+            if len(l) > 3:
+                del safe['language']
+
+        safe = self._codec_specific_parse_options(safe)
+
+        optlist = ['-scodec', self.ffmpeg_codec_name]
+        # if 'default' in safe:
+        #     optlist.extend(['-ac', str(safe['channels'])])
+        # if 'forced' in safe:
+        #     optlist.extend(['-ab', str(safe['bitrate']) + 'k'])
+        # if 'language' in safe:
+        #     optlist.extend(['-ar', str(safe['samplerate'])])
+
+        optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
+        return optlist
+
+
 class VideoCodec(BaseCodec):
     """
     Base video codec class handles general video options. Possible
@@ -296,6 +348,24 @@ class AudioCopyCodec(BaseCodec):
     def parse_options(self, opt):
         return ['-acodec', 'copy']
 
+class SubtitleCopyCodec(BaseCodec):
+    """
+    Copy subtitle stream directly from the source.
+    """
+    codec_name = 'copy'
+
+    def parse_options(self, opt):
+        return ['-scodec', 'copy']
+
+class SubtitleNullCodec(BaseCodec):
+    """
+    Null video codec (no video).
+    """
+
+    codec_name = None
+
+    def parse_options(self, opt):
+        return ['-sn']
 
 class VideoCopyCodec(BaseCodec):
     """
@@ -503,6 +573,30 @@ class Mpeg2Codec(MpegCodec):
     ffmpeg_codec_name = 'mpeg2video'
 
 
+class MOVTextCodec(SubtitleCodec):
+    """
+    mov_text subtitle codec.
+    """
+    codec_name = 'mov_text'
+    ffmpeg_codec_name = 'mov_text'
+
+class SSA(SubtitleCodec):
+    """
+    SSA (SubStation Alpha) subtitle.
+    """
+    codec_name = 'ass'
+    ffmpeg_codec_name = 'ass'
+
+class SubRip(SubtitleCodec):
+    """
+    SubRip subtitle.
+    """
+    codec_name = 'subrip'
+    ffmpeg_codec_name = 'subrip'
+
+
+
+
 audio_codec_list = [
     AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec,
     FdkAacCodec, Ac3Codec, DtsCodec
@@ -512,4 +606,8 @@ video_codec_list = [
     VideoNullCodec, VideoCopyCodec, TheoraCodec, H264Codec,
     DivxCodec, Vp8Codec, H263Codec, FlvCodec, Mpeg1Codec,
     Mpeg2Codec
+]
+
+subtitle_codec_list = [
+    SubtitleNullCodec, SubtitleCopyCodec, MOVTextCodec, SSA, SubRip
 ]
