@@ -70,11 +70,11 @@ class MediaFormatInfo(object):
         elif key == 'format_long_name':
             self.fullname = val
         elif key == 'bit_rate':
-            self.bitrate = float(val)
+            self.bitrate = MediaStreamInfo.parse_float(val, None)
         elif key == 'duration':
-            self.duration = float(val)
+            self.duration = MediaStreamInfo.parse_float(val, None)
         elif key == 'size':
-            self.size = float(val)
+            self.size = MediaStreamInfo.parse_float(val, None)
 
     def __repr__(self):
         return 'MediaFormatInfo(format=%s, duration=%.2f)' % (self.format,
