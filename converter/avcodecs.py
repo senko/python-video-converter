@@ -95,8 +95,8 @@ class SubtitleCodec(BaseCodec):
     """
     Base subtitle codec class handles general subtitle options. Possible
     parameters are:
-      * codec (string) - subtitle codec name (mov_text only one supported currently)
-      * language (string) - language of audio stream (3 char code)
+      * codec (string) - subtitle codec name (mov_text, subrib, ssa only supported currently)
+      * language (string) - language of subtitle stream (3 char code)
       * forced (int) - force subtitles (1 true, 0 false)
       * default (int) - default subtitles (1 true, 0 false)
 
@@ -132,12 +132,6 @@ class SubtitleCodec(BaseCodec):
         safe = self._codec_specific_parse_options(safe)
 
         optlist = ['-scodec', self.ffmpeg_codec_name]
-        # if 'default' in safe:
-        #     optlist.extend(['-ac', str(safe['channels'])])
-        # if 'forced' in safe:
-        #     optlist.extend(['-ab', str(safe['bitrate']) + 'k'])
-        # if 'language' in safe:
-        #     optlist.extend(['-ar', str(safe['samplerate'])])
 
         optlist.extend(self._codec_specific_produce_ffmpeg_list(safe))
         return optlist
@@ -339,24 +333,6 @@ class VideoNullCodec(BaseCodec):
         return ['-vn']
 
 
-class AudioCopyCodec(BaseCodec):
-    """
-    Copy audio stream directly from the source.
-    """
-    codec_name = 'copy'
-
-    def parse_options(self, opt):
-        return ['-acodec', 'copy']
-
-class SubtitleCopyCodec(BaseCodec):
-    """
-    Copy subtitle stream directly from the source.
-    """
-    codec_name = 'copy'
-
-    def parse_options(self, opt):
-        return ['-scodec', 'copy']
-
 class SubtitleNullCodec(BaseCodec):
     """
     Null video codec (no video).
@@ -367,6 +343,17 @@ class SubtitleNullCodec(BaseCodec):
     def parse_options(self, opt):
         return ['-sn']
 
+
+class AudioCopyCodec(BaseCodec):
+    """
+    Copy audio stream directly from the source.
+    """
+    codec_name = 'copy'
+
+    def parse_options(self, opt):
+        return ['-acodec', 'copy']
+
+
 class VideoCopyCodec(BaseCodec):
     """
     Copy video stream directly from the source.
@@ -375,6 +362,16 @@ class VideoCopyCodec(BaseCodec):
 
     def parse_options(self, opt):
         return ['-vcodec', 'copy']
+
+
+class SubtitleCopyCodec(BaseCodec):
+    """
+    Copy subtitle stream directly from the source.
+    """
+    codec_name = 'copy'
+
+    def parse_options(self, opt):
+        return ['-scodec', 'copy']
 
 
 class VorbisCodec(AudioCodec):
@@ -580,6 +577,7 @@ class MOVTextCodec(SubtitleCodec):
     codec_name = 'mov_text'
     ffmpeg_codec_name = 'mov_text'
 
+
 class SSA(SubtitleCodec):
     """
     SSA (SubStation Alpha) subtitle.
@@ -587,14 +585,13 @@ class SSA(SubtitleCodec):
     codec_name = 'ass'
     ffmpeg_codec_name = 'ass'
 
+
 class SubRip(SubtitleCodec):
     """
     SubRip subtitle.
     """
     codec_name = 'subrip'
     ffmpeg_codec_name = 'subrip'
-
-
 
 
 audio_codec_list = [
