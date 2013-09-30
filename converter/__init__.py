@@ -112,7 +112,7 @@ class Converter(object):
 
         subtitle_options = self.subtitle_codecs[c]().parse_options(opt_subtitle)
         if subtitle_options is None:
-            raise ConverterError('Unkniwn subtitle codec error')
+            raise ConverterError('Unknown subtitle codec error')
 
         if 'map' in opt:
             m = opt['map']
@@ -145,6 +145,7 @@ class Converter(object):
               avcodecs.AudioCodec for list of supported options
             * video (optional, dict) - video codec and options; see
               avcodecs.VideoCodec for list of supported options
+            * map (optional, int) - can be used to map all content of stream 0
 
         Multiple audio/video streams are not supported. The output has to
         have at least an audio or a video stream (or both).
