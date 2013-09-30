@@ -473,6 +473,14 @@ class Ac3Codec(AudioCodec):
     ffmpeg_codec_name = 'ac3'
 
 
+class FlacCodec(AudioCodec):
+    """
+    FLAC audio codec.
+    """
+    codec_name = 'flac'
+    ffmpeg_codec_name = 'flac'
+
+
 class DtsCodec(AudioCodec):
     """
     DTS audio codec.
@@ -594,9 +602,25 @@ class SubRip(SubtitleCodec):
     ffmpeg_codec_name = 'subrip'
 
 
+class DVBSub(SubtitleCodec):
+    """
+    DVB subtitles.
+    """
+    codec_name = 'dvbsub'
+    ffmpeg_codec_name = 'dvbsub'
+
+
+class DVDSub(SubtitleCodec):
+    """
+    DVD subtitles.
+    """
+    codec_name = 'dvdsub'
+    ffmpeg_codec_name = 'dvdsub'
+
+
 audio_codec_list = [
     AudioNullCodec, AudioCopyCodec, VorbisCodec, AacCodec, Mp3Codec, Mp2Codec,
-    FdkAacCodec, Ac3Codec, DtsCodec
+    FdkAacCodec, Ac3Codec, DtsCodec, FlacCodec
 ]
 
 video_codec_list = [
@@ -606,5 +630,6 @@ video_codec_list = [
 ]
 
 subtitle_codec_list = [
-    SubtitleNullCodec, SubtitleCopyCodec, MOVTextCodec, SSA, SubRip
+    SubtitleNullCodec, SubtitleCopyCodec, MOVTextCodec, SSA, SubRip, DVDSub,
+    DVBSub
 ]
