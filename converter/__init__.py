@@ -117,7 +117,7 @@ class Converter(object):
         if 'map' in opt:
             m = opt['map']
             if not type(m) == int:
-                raise ConverterError('map needs to be int not specified')
+                raise ConverterError('map needs to be int')
             else:
                 format_options.extend(['-map', str(m)])
 
