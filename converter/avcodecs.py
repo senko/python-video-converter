@@ -373,7 +373,7 @@ class SubtitleCopyCodec(BaseCodec):
     def parse_options(self, opt):
         return ['-scodec', 'copy']
 
-
+# Audio Codecs
 class VorbisCodec(AudioCodec):
     """
     Vorbis audio codec.
@@ -391,26 +391,6 @@ class VorbisCodec(AudioCodec):
         optlist = []
         if 'quality' in safe:
             optlist.extend(['-qscale:a', safe['quality']])
-        return optlist
-
-
-class TheoraCodec(VideoCodec):
-    """
-    Theora video codec.
-    @see http://ffmpeg.org/trac/ffmpeg/wiki/TheoraVorbisEncodingGuide
-    """
-    codec_name = 'theora'
-    ffmpeg_codec_name = 'libtheora'
-    encoder_options = VideoCodec.encoder_options.copy()
-    encoder_options.update({
-        'quality': int,  # audio quality. Range is 0-10(highest quality)
-        # 5-7 is a good range to try (default is 200k bitrate)
-    })
-
-    def _codec_specific_produce_ffmpeg_list(self, safe):
-        optlist = []
-        if 'quality' in safe:
-            optlist.extend(['-qscale:v', safe['quality']])
         return optlist
 
 
@@ -432,37 +412,6 @@ class FdkAacCodec(AudioCodec):
     """
     codec_name = 'libfdk_aac'
     ffmpeg_codec_name = 'libfdk_aac'
-
-
-class H264Codec(VideoCodec):
-    """
-    H.264/AVC video codec.
-    @see http://ffmpeg.org/trac/ffmpeg/wiki/x264EncodingGuide
-    """
-    codec_name = 'h264'
-    ffmpeg_codec_name = 'libx264'
-    encoder_options = VideoCodec.encoder_options.copy()
-    encoder_options.update({
-        'preset': str,  # common presets are ultrafast, superfast, veryfast,
-        # faster, fast, medium(default), slow, slower, veryslow
-        'quality': int,  # constant rate factor, range:0(lossless)-51(worst)
-        # default:23, recommended: 18-28
-        # http://mewiki.project357.com/wiki/X264_Settings#profile
-        'profile': str,  # default: not-set, for valid values see above link
-        'tune': str,  # default: not-set, for valid values see above link
-    })
-
-    def _codec_specific_produce_ffmpeg_list(self, safe):
-        optlist = []
-        if 'preset' in safe:
-            optlist.extend(['-preset', safe['preset']])
-        if 'quality' in safe:
-            optlist.extend(['-crf', safe['quality']])
-        if 'profile' in safe:
-            optlist.extend(['-profile', safe['profile']])
-        if 'tune' in safe:
-            optlist.extend(['-tune', safe['tune']])
-        return optlist
 
 
 class Ac3Codec(AudioCodec):
@@ -503,6 +452,58 @@ class Mp2Codec(AudioCodec):
     """
     codec_name = 'mp2'
     ffmpeg_codec_name = 'mp2'
+
+
+# Video Codecs
+class TheoraCodec(VideoCodec):
+    """
+    Theora video codec.
+    @see http://ffmpeg.org/trac/ffmpeg/wiki/TheoraVorbisEncodingGuide
+    """
+    codec_name = 'theora'
+    ffmpeg_codec_name = 'libtheora'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'quality': int,  # audio quality. Range is 0-10(highest quality)
+        # 5-7 is a good range to try (default is 200k bitrate)
+    })
+
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'quality' in safe:
+            optlist.extend(['-qscale:v', safe['quality']])
+        return optlist
+
+
+class H264Codec(VideoCodec):
+    """
+    H.264/AVC video codec.
+    @see http://ffmpeg.org/trac/ffmpeg/wiki/x264EncodingGuide
+    """
+    codec_name = 'h264'
+    ffmpeg_codec_name = 'libx264'
+    encoder_options = VideoCodec.encoder_options.copy()
+    encoder_options.update({
+        'preset': str,  # common presets are ultrafast, superfast, veryfast,
+        # faster, fast, medium(default), slow, slower, veryslow
+        'quality': int,  # constant rate factor, range:0(lossless)-51(worst)
+        # default:23, recommended: 18-28
+        # http://mewiki.project357.com/wiki/X264_Settings#profile
+        'profile': str,  # default: not-set, for valid values see above link
+        'tune': str,  # default: not-set, for valid values see above link
+    })
+
+    def _codec_specific_produce_ffmpeg_list(self, safe):
+        optlist = []
+        if 'preset' in safe:
+            optlist.extend(['-preset', safe['preset']])
+        if 'quality' in safe:
+            optlist.extend(['-crf', safe['quality']])
+        if 'profile' in safe:
+            optlist.extend(['-profile', safe['profile']])
+        if 'tune' in safe:
+            optlist.extend(['-tune', safe['tune']])
+        return optlist
 
 
 class DivxCodec(VideoCodec):
@@ -578,6 +579,7 @@ class Mpeg2Codec(MpegCodec):
     ffmpeg_codec_name = 'mpeg2video'
 
 
+# Subtitle Codecs
 class MOVTextCodec(SubtitleCodec):
     """
     mov_text subtitle codec.
