@@ -260,10 +260,10 @@ class TestFFMpeg(unittest.TestCase):
         self.assertRaisesSpecific(ConverterError, c.parse_options,
                                   {'format': 'ogg', 'audio': {'codec': 'bogus'}})
 
-        self.assertEqual(['-an', '-vcodec', 'libtheora', '-r', '25', '-f', 'ogg'],
+        self.assertEqual(['-an', '-vcodec', 'libtheora', '-r', '25', '-sn', '-f', 'ogg'],
                          c.parse_options({'format': 'ogg', 'video': {'codec': 'theora', 'fps': 25}}))
-        self.assertEqual(['-acodec', 'copy', '-vcodec', 'copy', '-f', 'ogg'],
-                         c.parse_options({'format': 'ogg', 'audio': {'codec': 'copy'}, 'video': {'codec': 'copy'}}))
+        self.assertEqual(['-acodec', 'copy', '-vcodec', 'copy', '-sn', '-f', 'ogg'],
+                         c.parse_options({'format': 'ogg', 'audio': {'codec': 'copy'}, 'video': {'codec': 'copy'}, 'subtitle': {'codec': None}}))
 
         info = c.probe('test1.ogg')
         self.assertEqual('theora', info.video.codec)
