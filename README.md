@@ -28,7 +28,7 @@ on top of it.
             'width': 720,
             'height': 400,
             'fps': 15
-        })
+        }})
 
     for timecode in conv:
         print "Converting (%f) ...\r" % timecode
