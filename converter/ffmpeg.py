@@ -360,10 +360,6 @@ class FFMpeg(object):
         :param posters_as_video: Take poster images (mainly for audio files) as
             A video stream, defaults to True
         """
-
-        if not os.path.exists(fname):
-            return None
-
         info = MediaInfo(posters_as_video)
 
         p = self._spawn([self.ffprobe_path,
@@ -398,9 +394,6 @@ class FFMpeg(object):
         ...    pass # can be used to inform the user about conversion progress
 
         """
-        if not os.path.exists(infile):
-            raise FFMpegError("Input file doesn't exist: " + infile)
-
         cmds = [self.ffmpeg_path, '-i', infile]
         cmds.extend(opts)
         cmds.extend(['-y', outfile])
@@ -502,9 +495,6 @@ class FFMpeg(object):
         >>> FFMpeg().thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
         >>>                                   (10, '/tmp/shot2.png', None, 5)])
         """
-        if not os.path.exists(fname):
-            raise IOError('No such file: ' + fname)
-
         cmds = [self.ffmpeg_path, '-i', fname, '-y', '-an']
         for thumb in option_list:
             if len(thumb) > 2 and thumb[2]:
