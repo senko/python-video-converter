@@ -77,6 +77,8 @@ class MediaFormatInfo(object):
             self.size = MediaStreamInfo.parse_float(val, None)
 
     def __repr__(self):
+        if self.duration is None:
+            return 'MediaFormatInfo(format=%s)' % self.format
         return 'MediaFormatInfo(format=%s, duration=%.2f)' % (self.format,
                                                               self.duration)
 
