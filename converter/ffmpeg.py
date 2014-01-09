@@ -117,6 +117,8 @@ class MediaStreamInfo(object):
         self.audio_channels = None
         self.audio_samplerate = None
         self.attached_pic = None
+        self.sub_forced = None
+        self.sub_default = None
         self.metadata = {}
 
     @staticmethod
@@ -188,6 +190,13 @@ class MediaStreamInfo(object):
                 elif '.' in val:
                     self.video_fps = self.parse_float(val)
 
+        if self.type == 'subtitle':
+            if key == 'disposition:forced':
+                self.sub_forced = self.parse_int(val)
+            if key == 'disposition:default':
+                self.sub_default = self.parse_int(val)
+
+
     def __repr__(self):
         d = ''
         metadata_str = ['%s=%s' % (key, value) for key, value
@@ -201,6 +210,8 @@ class MediaStreamInfo(object):
             d = 'type=%s, codec=%s, width=%d, height=%d, fps=%.1f' % (
                 self.type, self.codec, self.video_width, self.video_height,
                 self.video_fps)
+        elif self.type == 'subtitle':
+            d = 'type=%s, codec=%s' % (self.type, self.codec)
         if self.bitrate is not None:
             d += ', bitrate=%d' % self.bitrate
 

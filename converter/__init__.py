@@ -2,7 +2,7 @@
 
 import os
 
-from avcodecs import video_codec_list, audio_codec_list
+from avcodecs import video_codec_list, audio_codec_list, subtitle_codec_list
 from formats import format_list
 from ffmpeg import FFMpeg, FFMpegError, FFMpegConvertError
 
@@ -27,6 +27,7 @@ class Converter(object):
                              ffprobe_path=ffprobe_path)
         self.video_codecs = {}
         self.audio_codecs = {}
+        self.subtitle_codecs = {}
         self.formats = {}
 
         for cls in audio_codec_list:
@@ -36,6 +37,10 @@ class Converter(object):
         for cls in video_codec_list:
             name = cls.codec_name
             self.video_codecs[name] = cls
+
+        for cls in subtitle_codec_list:
+            name = cls.codec_name
+            self.subtitle_codecs[name] = cls
 
         for cls in format_list:
             name = cls.format_name
@@ -94,8 +99,31 @@ class Converter(object):
         if video_options is None:
             raise ConverterError('Unknown video codec error')
 
+        if 'subtitle' not in opt:
+            opt_subtitle = {'codec': None}
+        else:
+            opt_subtitle = opt['subtitle']
+            if not isinstance(opt_subtitle, dict) or 'codec' not in opt_subtitle:
+                raise ConverterError('Invalid subtitle codec specification')
+
+        c = opt_subtitle['codec']
+        if c not in self.subtitle_codecs:
+            raise ConverterError('Requested unknown subtitle codec ' + str(c))
+
+        subtitle_options = self.subtitle_codecs[c]().parse_options(opt_subtitle)
+        if subtitle_options is None:
+            raise ConverterError('Unknown subtitle codec error')
+
+        if 'map' in opt:
+            m = opt['map']
+            if not type(m) == int:
+                raise ConverterError('map needs to be int')
+            else:
+                format_options.extend(['-map', str(m)])
+
+
         # aggregate all options
-        optlist = audio_options + video_options + format_options
+        optlist = audio_options + video_options + subtitle_options + format_options
 
         if twopass == 1:
             optlist.extend(['-pass', '1'])
@@ -117,6 +145,7 @@ class Converter(object):
               avcodecs.AudioCodec for list of supported options
             * video (optional, dict) - video codec and options; see
               avcodecs.VideoCodec for list of supported options
+            * map (optional, int) - can be used to map all content of stream 0
 
         Multiple audio/video streams are not supported. The output has to
         have at least an audio or a video stream (or both).
