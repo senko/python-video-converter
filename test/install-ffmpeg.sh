@@ -5,5 +5,5 @@
 # apt-get -y -qq update
 # apt-get -y -qq install ffmpeg
 
-wget -P /tmp http://ffmpeg.gusari.org/static/64bit/ffmpeg.static.64bit.2013-06-28.tar.gz
-tar -xvf /tmp/ffmpeg.static.64bit.2013-06-28.tar.gz -C /usr/local/bin
+wget -P /tmp http://ffmpeg.gusari.org/static/64bit/ffmpeg.static.64bit.2014-01-10.tar.gz
+tar -xvf /tmp/ffmpeg.static.64bit.2014-01-10.tar.gz -C /usr/local/bin
