@@ -15,7 +15,7 @@ class FFMpegError(Exception):
 
 
 class FFMpegConvertError(Exception):
-    def __init__(self, message, cmd, output, details=None):
+    def __init__(self, message, cmd, output, details=None, pid=0):
         """
         @param    message: Error message.
         @type     message: C{str}
@@ -34,11 +34,12 @@ class FFMpegConvertError(Exception):
         self.cmd = cmd
         self.output = output
         self.details = details
+        self.pid = pid
 
     def __repr__(self):
         error = self.details if self.details else self.message
-        return ('<FFMpegConvertError error="%s", cmd="%s">' %
-                (error, self.cmd))
+        return ('<FFMpegConvertError error="%s", pid=%s, cmd="%s">' %
+                (error, self.pid, self.cmd))
 
     def __str__(self):
         return self.__repr__()
@@ -477,20 +478,20 @@ class FFMpeg(object):
 
             if line.startswith('Received signal'):
                 # Received signal 15: terminating.
-                raise FFMpegConvertError(line.split(':')[0], cmd, total_output)
+                raise FFMpegConvertError(line.split(':')[0], cmd, total_output, pid=p.pid)
             if line.startswith(infile + ': '):
                 err = line[len(infile) + 2:]
                 raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                         err)
+                                         err, pid=p.pid)
             if line.startswith('Error while '):
                 raise FFMpegConvertError('Encoding error', cmd, total_output,
-                                         line)
+                                         line, pid=p.pid)
             if not yielded:
                 raise FFMpegConvertError('Unknown ffmpeg error', cmd,
-                                         total_output, line)
+                                         total_output, line, pid=p.pid)
         if p.returncode != 0:
             raise FFMpegConvertError('Exited with code %d' % p.returncode, cmd,
-                                     total_output)
+                                     total_output, pid=p.pid)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
         """
