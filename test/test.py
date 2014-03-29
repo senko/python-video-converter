@@ -56,7 +56,8 @@ class TestFFMpeg(unittest.TestCase):
         try:
             fn(*args, **kwargs)
             raise Exception('Expected exception %s not raised' % repr(exception))
-        except exception, ex:
+        except exception:
+            ex = sys.exc_info()[1]
             return ex
 
     @staticmethod
@@ -159,7 +160,7 @@ class TestFFMpeg(unittest.TestCase):
         p_list = {}  # modifiable object in closure
         f._spawn = lambda *args: p_list.setdefault('', ffmpeg.FFMpeg._spawn(*args))
         conv = f.convert('test1.ogg', self.video_file_path, convert_options)
-        conv.next()  # let ffmpeg to start
+        next(conv)  # let ffmpeg to start
         p = p_list['']
         p.terminate()
         self.assertRaisesSpecific(ffmpeg.FFMpegConvertError, list, conv)
@@ -309,7 +310,7 @@ class TestFFMpeg(unittest.TestCase):
         verify_progress(conv)
 
         # Convert should not change options dict
-        self.assertEquals(options_repr, repr(options))
+        self.assertEqual(options_repr, repr(options))
 
         self._assert_converted_video_file()
 

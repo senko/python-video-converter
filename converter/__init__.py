@@ -2,9 +2,9 @@
 
 import os
 
-from avcodecs import video_codec_list, audio_codec_list, subtitle_codec_list
-from formats import format_list
-from ffmpeg import FFMpeg, FFMpegError, FFMpegConvertError
+from converter.avcodecs import video_codec_list, audio_codec_list, subtitle_codec_list
+from converter.formats import format_list
+from converter.ffmpeg import FFMpeg, FFMpegError, FFMpegConvertError
 
 
 class ConverterError(Exception):
