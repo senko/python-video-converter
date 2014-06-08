@@ -13,26 +13,26 @@ logger = logging.getLogger(__name__)
 console_encoding = locale.getdefaultlocale()[1] or 'UTF-8'
 
 
-class FFMpegError(Exception):
+class AvConvError(Exception):
     pass
 
 
-class FFMpegConvertError(Exception):
+class AvConvConvertError(Exception):
     def __init__(self, message, cmd, output, details=None, pid=0):
         """
         @param    message: Error message.
         @type     message: C{str}
 
-        @param    cmd: Full command string used to spawn ffmpeg.
+        @param    cmd: Full command string used to spawn AvConv.
         @type     cmd: C{str}
 
-        @param    output: Full stdout output from the ffmpeg command.
+        @param    output: Full stdout output from the AvConv command.
         @type     output: C{str}
 
         @param    details: Optional error details.
         @type     details: C{str}
         """
-        super(FFMpegConvertError, self).__init__(message)
+        super(AvConvConvertError, self).__init__(message)
 
         self.cmd = cmd
         self.output = output
@@ -41,7 +41,7 @@ class FFMpegConvertError(Exception):
 
     def __repr__(self):
         error = self.details if self.details else self.message
-        return ('<FFMpegConvertError error="%s", pid=%s, cmd="%s">' %
+        return ('<AvConvConvertError error="%s", pid=%s, cmd="%s">' %
                 (error, self.pid, self.cmd))
 
     def __str__(self):
@@ -65,9 +65,9 @@ class MediaFormatInfo(object):
         self.duration = None
         self.filesize = None
 
-    def parse_ffprobe(self, key, val):
+    def parse_avprobe(self, key, val):
         """
-        Parse raw ffprobe output (key=value).
+        Parse raw avprobe output (key=value).
         """
         if key == 'format_name':
             self.format = val
@@ -136,12 +136,12 @@ class MediaStreamInfo(object):
     def parse_int(val, default=0):
         try:
             return int(val)
-        except:
+        except (TypeError, ValueError):
             return default
 
-    def parse_ffprobe(self, key, val):
+    def parse_avprobe(self, key, val):
         """
-        Parse raw ffprobe output (key=value).
+        Parse raw avprobe output (key=value).
         """
 
         if key == 'index':
@@ -184,7 +184,7 @@ class MediaStreamInfo(object):
                     self.video_fps = self.parse_float(val)
 
         if self.type == 'video':
-            if key == 'r_frame_rate':
+            if key == 'avg_frame_rate':
                 if '/' in val:
                     n, d = val.split('/')
                     n = self.parse_float(n)
@@ -244,9 +244,9 @@ class MediaInfo(object):
         self.posters_as_video = posters_as_video
         self.streams = []
 
-    def parse_ffprobe(self, raw):
+    def parse_avprobe(self, raw):
         """
-        Parse raw ffprobe output.
+        Parse raw avprobe output.
         """
         in_format = False
         current_stream = None
@@ -254,25 +254,25 @@ class MediaInfo(object):
         for line in raw.split('\n'):
             line = line.strip()
             if line == '':
-                continue
-            elif line == '[STREAM]':
-                current_stream = MediaStreamInfo()
-            elif line == '[/STREAM]':
-                if current_stream.type:
+                if current_stream is None and not in_format:
+                    continue
+                elif current_stream is not None:
                     self.streams.append(current_stream)
-                current_stream = None
-            elif line == '[FORMAT]':
+                    current_stream = None
+                elif in_format:
+                    in_format = False
+            elif line.startswith('[stream'):
+                current_stream = MediaStreamInfo()
+            elif line == '[format]':
                 in_format = True
-            elif line == '[/FORMAT]':
-                in_format = False
             elif '=' in line:
                 k, v = line.split('=', 1)
                 k = k.strip()
                 v = v.strip()
                 if current_stream:
-                    current_stream.parse_ffprobe(k, v)
+                    current_stream.parse_avprobe(k, v)
                 elif in_format:
-                    self.format.parse_ffprobe(k, v)
+                    self.format.parse_avprobe(k, v)
 
     def __repr__(self):
         return 'MediaInfo(format=%s, streams=%s)' % (repr(self.format),
@@ -304,19 +304,19 @@ class MediaInfo(object):
         return None
 
 
-class FFMpeg(object):
+class AvConv(object):
     """
-    FFMPeg wrapper object, takes care of calling the ffmpeg binaries,
+    AvConv wrapper object, takes care of calling the AvConv binaries,
     passing options and parsing the output.
 
-    >>> f = FFMpeg()
+    >>> f = AvConv()
     """
     DEFAULT_JPEG_QUALITY = 4
 
     def __init__(self, conv_path=None, probe_path=None):
         """
-        Initialize a new FFMpeg wrapper object. Optional parameters specify
-        the paths to ffmpeg and ffprobe utilities.
+        Initialize a new AvConv wrapper object. Optional parameters specify
+        the paths to AvConv and avprobe utilities.
         """
 
         def which(name):
@@ -328,28 +328,28 @@ class FFMpeg(object):
             return None
 
         if conv_path is None:
-            conv_path = 'ffmpeg'
+            conv_path = 'avconv'
 
         if probe_path is None:
-            probe_path = 'ffprobe'
+            probe_path = 'avprobe'
 
         if '/' not in conv_path:
             conv_path = which(conv_path) or conv_path
         if '/' not in probe_path:
             probe_path = which(probe_path) or probe_path
 
-        self.ffmpeg_path = conv_path
-        self.ffprobe_path = probe_path
+        self.avconv_path = conv_path
+        self.avprobe_path = probe_path
 
-        if not os.path.exists(self.ffmpeg_path):
-            raise FFMpegError("ffmpeg binary not found: " + self.conv_path)
+        if not os.path.exists(self.avconv_path):
+            raise AvConvError("avconv binary not found: " + self.avconv_path)
 
-        if not os.path.exists(self.ffprobe_path):
-            raise FFMpegError("ffprobe binary not found: " + self.ffprobe_path)
+        if not os.path.exists(self.avprobe_path):
+            raise AvConvError("avprobe binary not found: " + self.avprobe_path)
 
     @staticmethod
     def _spawn(cmds):
-        logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
+        logger.debug('Spawning AvConv with command: ' + ' '.join(cmds))
         return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
                      close_fds=True)
 
@@ -359,7 +359,7 @@ class FFMpeg(object):
         Returns the MediaInfo object, or None if the specified file is
         not a valid media file.
 
-        >>> info = FFMpeg().probe('test1.ogg')
+        >>> info = AvConv().probe('test1.ogg')
         >>> info.format
         'ogg'
         >>> info.duration
@@ -383,11 +383,11 @@ class FFMpeg(object):
 
         info = MediaInfo(posters_as_video)
 
-        p = self._spawn([self.ffprobe_path,
+        p = self._spawn([self.avprobe_path,
                          '-show_format', '-show_streams', fname])
         stdout_data, _ = p.communicate()
         stdout_data = stdout_data.decode(console_encoding)
-        info.parse_ffprobe(stdout_data)
+        info.parse_avprobe(stdout_data)
 
         if not info.format.format and len(info.streams) == 0:
             return None
@@ -397,7 +397,7 @@ class FFMpeg(object):
     def convert(self, infile, outfile, opts, timeout=10):
         """
         Convert the source media (infile) according to specified options
-        (a list of ffmpeg switches as strings) and save it to outfile.
+        (a list of AvConv switches as strings) and save it to outfile.
 
         Convert returns a generator that needs to be iterated to drive the
         conversion process. The generator will periodically yield timecode
@@ -405,34 +405,34 @@ class FFMpeg(object):
         content is the conversion process currently).
 
         The optional timeout argument specifies how long should the operation
-        be blocked in case ffmpeg gets stuck and doesn't report back. See
+        be blocked in case AvConv gets stuck and doesn't report back. See
         the documentation in Converter.convert() for more details about this
         option.
 
-        >>> conv = FFMpeg().convert('test.ogg', '/tmp/output.mp3',
+        >>> conv = AvConv().convert('test.ogg', '/tmp/output.mp3',
         ...    ['-acodec libmp3lame', '-vn'])
         >>> for timecode in conv:
         ...    pass # can be used to inform the user about conversion progress
 
         """
         if not os.path.exists(infile):
-            raise FFMpegError("Input file doesn't exist: " + infile)
+            raise AvConvError("Input file doesn't exist: " + infile)
 
-        cmds = [self.ffmpeg_path, '-i', infile]
+        cmds = [self.avconv_path, '-i', infile]
         cmds.extend(opts)
         cmds.extend(['-y', outfile])
 
         if timeout:
             def on_sigalrm(*_):
                 signal.signal(signal.SIGALRM, signal.SIG_DFL)
-                raise Exception('timed out while waiting for ffmpeg')
+                raise Exception('timed out while waiting for AvConv')
 
             signal.signal(signal.SIGALRM, on_sigalrm)
 
         try:
             p = self._spawn(cmds)
         except OSError:
-            raise FFMpegError('Error while calling ffmpeg binary')
+            raise AvConvError('Error while calling AvConv binary')
 
         yielded = False
         buf = ''
@@ -474,7 +474,7 @@ class FFMpeg(object):
         p.communicate()  # wait for process to exit
 
         if total_output == '':
-            raise FFMpegError('Error while calling ffmpeg binary')
+            raise AvConvError('Error while calling AvConv binary')
 
         cmd = ' '.join(cmds)
         if '\n' in total_output:
@@ -482,19 +482,19 @@ class FFMpeg(object):
 
             if line.startswith('Received signal'):
                 # Received signal 15: terminating.
-                raise FFMpegConvertError(line.split(':')[0], cmd, total_output, pid=p.pid)
+                raise AvConvConvertError(line.split(':')[0], cmd, total_output, pid=p.pid)
             if line.startswith(infile + ': '):
                 err = line[len(infile) + 2:]
-                raise FFMpegConvertError('Encoding error', cmd, total_output,
+                raise AvConvConvertError('Encoding error', cmd, total_output,
                                          err, pid=p.pid)
             if line.startswith('Error while '):
-                raise FFMpegConvertError('Encoding error', cmd, total_output,
+                raise AvConvConvertError('Encoding error', cmd, total_output,
                                          line, pid=p.pid)
             if not yielded:
-                raise FFMpegConvertError('Unknown ffmpeg error', cmd,
+                raise AvConvConvertError('Unknown AvConv error', cmd,
                                          total_output, line, pid=p.pid)
         if p.returncode != 0:
-            raise FFMpegConvertError('Exited with code %d' % p.returncode, cmd,
+            raise AvConvConvertError('Exited with code %d' % p.returncode, cmd,
                                      total_output, pid=p.pid)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY):
@@ -506,7 +506,7 @@ class FFMpeg(object):
         @param quality: quality of jpeg file in range 2(best)-31(worst)
             recommended range: 2-6
 
-        >>> FFMpeg().thumbnail('test1.ogg', 5, '/tmp/shot.png', '320x240')
+        >>> AvConv().thumbnail('test1.ogg', 5, '/tmp/shot.png', '320x240')
         """
         return self.thumbnails(fname, [(time, outfile, size, quality)])
 
@@ -515,15 +515,15 @@ class FFMpeg(object):
         Create one or more thumbnails of video.
         @param option_list: a list of tuples like:
             (time, outfile, size=None, quality=DEFAULT_JPEG_QUALITY)
-            see documentation of `converter.FFMpeg.thumbnail()` for details.
+            see documentation of `converter.AvConv.thumbnail()` for details.
 
-        >>> FFMpeg().thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
+        >>> AvConv().thumbnails('test1.ogg', [(5, '/tmp/shot.png', '320x240'),
         >>>                                   (10, '/tmp/shot2.png', None, 5)])
         """
         if not os.path.exists(fname):
             raise IOError('No such file: ' + fname)
 
-        cmds = [self.ffmpeg_path, '-i', fname, '-y', '-an']
+        cmds = [self.avconv_path, '-i', fname, '-y', '-an']
         for thumb in option_list:
             if len(thumb) > 2 and thumb[2]:
                 cmds.extend(['-s', str(thumb[2])])
@@ -531,13 +531,13 @@ class FFMpeg(object):
             cmds.extend([
                 '-f', 'image2', '-vframes', '1',
                 '-ss', str(thumb[0]), thumb[1],
-                '-q:v', str(FFMpeg.DEFAULT_JPEG_QUALITY if len(thumb) < 4 else str(thumb[3])),
+                '-q:v', str(AvConv.DEFAULT_JPEG_QUALITY if len(thumb) < 4 else str(thumb[3])),
             ])
 
         p = self._spawn(cmds)
         _, stderr_data = p.communicate()
         if stderr_data == '':
-            raise FFMpegError('Error while calling ffmpeg binary')
+            raise AvConvError('Error while calling AvConv binary')
         stderr_data.decode(console_encoding)
         if any(not os.path.exists(option[1]) for option in option_list):
-            raise FFMpegError('Error creating thumbnail: %s' % stderr_data)
+            raise AvConvError('Error creating thumbnail: %s' % stderr_data)
