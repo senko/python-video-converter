@@ -3,4 +3,4 @@
 /dist/
 /doc/_build/
 *.pyc
-
+.idea

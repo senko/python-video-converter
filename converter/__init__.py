@@ -5,6 +5,7 @@ import os
 from converter.avcodecs import video_codec_list, audio_codec_list, subtitle_codec_list
 from converter.formats import format_list
 from converter.ffmpeg import FFMpeg, FFMpegError, FFMpegConvertError
+from converter.avconv import AvConv, AvConvError, AvConvConvertError
 
 
 class ConverterError(Exception):
@@ -18,13 +19,18 @@ class Converter(object):
     >>> c = Converter()
     """
 
-    def __init__(self, ffmpeg_path=None, ffprobe_path=None):
+    def converter_cls(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def __init__(self, conv_path=None, probe_path=None):
         """
         Initialize a new Converter object.
         """
 
-        self.ffmpeg = FFMpeg(ffmpeg_path=ffmpeg_path,
-                             ffprobe_path=ffprobe_path)
+        self.converter = self.converter_cls(
+            conv_path=conv_path,
+            probe_path=probe_path
+        )
         self.video_codecs = {}
         self.audio_codecs = {}
         self.subtitle_codecs = {}
@@ -48,7 +54,7 @@ class Converter(object):
 
     def parse_options(self, opt, twopass=None):
         """
-        Parse format/codec options and prepare raw ffmpeg option list.
+        Parse format/codec options and prepare raw converter option list.
         """
         if not isinstance(opt, dict):
             raise ConverterError('Invalid output specification')
@@ -156,9 +162,9 @@ class Converter(object):
         content is the conversion process currently).
 
         The optional timeout argument specifies how long should the operation
-        be blocked in case ffmpeg gets stuck and doesn't report back. This
+        be blocked in case converter gets stuck and doesn't report back. This
         doesn't limit the total conversion time, just the amount of time
-        Converter will wait for each update from ffmpeg. As it's usually
+        Converter will wait for each update from converter. As it's usually
         less than a second, the default of 10 is a reasonable default. To
         disable the timeout, set it to None. You may need to do this if
         using Converter in a threading environment, since the way the
@@ -181,7 +187,7 @@ class Converter(object):
         if not os.path.exists(infile):
             raise ConverterError("Source file doesn't exist: " + infile)
 
-        info = self.ffmpeg.probe(infile)
+        info = self.converter.probe(infile)
         if info is None:
             raise ConverterError("Can't get information about source file")
 
@@ -199,40 +205,48 @@ class Converter(object):
 
         if twopass:
             optlist1 = self.parse_options(options, 1)
-            for timecode in self.ffmpeg.convert(infile, outfile, optlist1,
+            for timecode in self.converter.convert(infile, outfile, optlist1,
                                                 timeout=timeout):
                 yield int((50.0 * timecode) / info.format.duration)
 
             optlist2 = self.parse_options(options, 2)
-            for timecode in self.ffmpeg.convert(infile, outfile, optlist2,
+            for timecode in self.converter.convert(infile, outfile, optlist2,
                                                 timeout=timeout):
                 yield int(50.0 + (50.0 * timecode) / info.format.duration)
         else:
             optlist = self.parse_options(options, twopass)
-            for timecode in self.ffmpeg.convert(infile, outfile, optlist,
+            for timecode in self.converter.convert(infile, outfile, optlist,
                                                 timeout=timeout):
                 yield int((100.0 * timecode) / info.format.duration)
 
     def probe(self, fname, posters_as_video=True):
         """
         Examine the media file. See the documentation of
-        converter.FFMpeg.probe() for details.
+        converter.converter.probe() for details.
 
         :param posters_as_video: Take poster images (mainly for audio files) as
             A video stream, defaults to True
         """
-        return self.ffmpeg.probe(fname, posters_as_video)
+        return self.converter.probe(fname, posters_as_video)
 
     def thumbnail(self, fname, time, outfile, size=None, quality=FFMpeg.DEFAULT_JPEG_QUALITY):
         """
         Create a thumbnail of the media file. See the documentation of
-        converter.FFMpeg.thumbnail() for details.
+        converter.converter.thumbnail() for details.
         """
-        return self.ffmpeg.thumbnail(fname, time, outfile, size, quality)
+        return self.converter.thumbnail(fname, time, outfile, size, quality)
 
     def thumbnails(self, fname, option_list):
         """
         Create one or more thumbnail of the media file. See the documentation
-        of converter.FFMpeg.thumbnails() for details.
+        of converter.converter.thumbnails() for details.
         """
-        return self.ffmpeg.thumbnails(fname, option_list)
+        return self.converter.thumbnails(fname, option_list)
+
+
+class ConverterFFMpeg(Converter):
+    converter_cls = FFMpeg
+
+
+class ConverterAVConv(Converter):
+    converter_cls = AvConv
