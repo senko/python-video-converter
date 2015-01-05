@@ -416,6 +416,14 @@ class FFMpeg(object):
         ...    pass # can be used to inform the user about conversion progress
 
         """
+        
+        
+        if sys.platform == 'win32' :
+            """
+            signal.SIGALRM is un supported on windows
+            ToDo: change to windows compatible timeout mechanism 
+            """
+            timeout=0
         if not os.path.exists(infile):
             raise FFMpegError("Input file doesn't exist: " + infile)
 
