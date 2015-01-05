@@ -2,6 +2,7 @@
 
 import os.path
 import os
+import sys
 import re
 import signal
 from subprocess import Popen, PIPE
@@ -351,7 +352,7 @@ class FFMpeg(object):
     def _spawn(cmds):
         logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
         return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                     close_fds=True)
+                     close_fds=(sys.platform != 'win32'))
 
     def probe(self, fname, posters_as_video=True):
         """
