@@ -152,6 +152,7 @@ class VideoCodec(BaseCodec):
             * pad - pad with black bars
       * src_width (int) - source width
       * src_height (int) - source height
+      * gop_size (int) - set the group of picture (GOP) size
 
     Aspect preserval mode is only used if both source
     and both destination sizes are specified. If source
@@ -175,6 +176,7 @@ class VideoCodec(BaseCodec):
         'mode': str,
         'src_width': int,
         'src_height': int,
+        'gop_size' : int
     }
 
     def _aspect_corrections(self, sw, sh, w, h, mode):
@@ -295,6 +297,8 @@ class VideoCodec(BaseCodec):
         filters = safe['aspect_filters']
 
         optlist = ['-vcodec', self.ffmpeg_codec_name]
+        if 'gop_size' in safe :
+            optlist.extend(['-g', str(safe['gop_size'])])
         if 'fps' in safe:
             optlist.extend(['-r', str(safe['fps'])])
         if 'bitrate' in safe:
