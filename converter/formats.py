@@ -90,9 +90,16 @@ class Mp3Format(BaseFormat):
     """
     format_name = 'mp3'
     ffmpeg_format_name = 'mp3'
+    
+class WMVFormat(BaseFormat):
+    """
+    WMV
+    """
+    format_name = 'wmv'
+    ffmpeg_format_name = 'wmv'
 
 
 format_list = [
     OggFormat, AviFormat, MkvFormat, WebmFormat, FlvFormat,
-    MovFormat, Mp4Format, MpegFormat, Mp3Format
+    MovFormat, Mp4Format, MpegFormat, Mp3Format, WMVFormat
 ]
