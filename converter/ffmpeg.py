@@ -2,6 +2,7 @@
 
 import os.path
 import os
+import sys
 import re
 import signal
 from subprocess import Popen, PIPE
@@ -351,7 +352,7 @@ class FFMpeg(object):
     def _spawn(cmds):
         logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
         return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                     close_fds=True)
+                     close_fds=(sys.platform != 'win32'))
 
     def probe(self, fname, posters_as_video=True):
         """
@@ -415,6 +416,14 @@ class FFMpeg(object):
         ...    pass # can be used to inform the user about conversion progress
 
         """
+        
+        
+        if sys.platform == 'win32' :
+            """
+            signal.SIGALRM is un supported on windows
+            ToDo: change to windows compatible timeout mechanism 
+            """
+            timeout=0
         if not os.path.exists(infile):
             raise FFMpegError("Input file doesn't exist: " + infile)
 
