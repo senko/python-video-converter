@@ -92,7 +92,16 @@ class Mp3Format(BaseFormat):
     ffmpeg_format_name = 'mp3'
 
 
+class SrtFormat(BaseFormat):
+    """
+    Mp4 container format, the default Format for H.264
+    video content.
+    """
+    format_name = 'srt'
+    ffmpeg_format_name = 'srt'
+
+
 format_list = [
     OggFormat, AviFormat, MkvFormat, WebmFormat, FlvFormat,
-    MovFormat, Mp4Format, MpegFormat, Mp3Format
+    MovFormat, Mp4Format, MpegFormat, Mp3Format, SrtFormat
 ]

@@ -50,6 +50,11 @@ class Converter(object):
         """
         Parse format/codec options and prepare raw ffmpeg option list.
         """
+        format_options = None
+        audio_options = []
+        video_options = []
+        subtitle_options = []
+
         if not isinstance(opt, dict):
             raise ConverterError('Invalid output specification')
 
@@ -64,66 +69,85 @@ class Converter(object):
         if format_options is None:
             raise ConverterError('Unknown container format error')
 
-        if 'audio' not in opt and 'video' not in opt:
-            raise ConverterError('Neither audio nor video streams requested')
+        if 'audio' not in opt and 'video' not in opt and 'subtitle' not in opt:
+            raise ConverterError('Neither audio nor video nor subtitle streams requested')
 
-        # audio options
-        if 'audio' not in opt or twopass == 1:
-            opt_audio = {'codec': None}
-        else:
-            opt_audio = opt['audio']
-            if not isinstance(opt_audio, dict) or 'codec' not in opt_audio:
-                raise ConverterError('Invalid audio codec specification')
+        if 'audio' in opt:
+            y = opt['audio']
 
-        c = opt_audio['codec']
-        if c not in self.audio_codecs:
-            raise ConverterError('Requested unknown audio codec ' + str(c))
+            # Creates the new nested dictionary to preserve backwards compatability
+            try:
+                first = y.values()[0]
+                if not isinstance(first, dict) and first is not None:
+                    y = {0: y}
+            except IndexError:
+                pass
 
-        audio_options = self.audio_codecs[c]().parse_options(opt_audio)
-        if audio_options is None:
-            raise ConverterError('Unknown audio codec error')
+            for n in y:
+                x = y[n]
 
-        # video options
-        if 'video' not in opt:
-            opt_video = {'codec': None}
-        else:
-            opt_video = opt['video']
-            if not isinstance(opt_video, dict) or 'codec' not in opt_video:
+                if not isinstance(x, dict) or 'codec' not in x:
+                    raise ConverterError('Invalid audio codec specification')
+
+                if 'path' in x and 'source' not in x:
+                    raise ConverterError('Cannot specify audio path without FFMPEG source number')
+
+                if 'source' in x and 'path' not in x:
+                    raise ConverterError('Cannot specify alternate input source without a path')
+
+                c = x['codec']
+                if c not in self.audio_codecs:
+                    raise ConverterError('Requested unknown audio codec ' + str(c))
+
+                audio_options.extend(self.audio_codecs[c]().parse_options(x, n))
+                if audio_options is None:
+                    raise ConverterError('Unknown audio codec error')
+
+        if 'subtitle' in opt:
+            y = opt['subtitle']
+
+            # Creates the new nested dictionary to preserve backwards compatability
+            try:
+                first = y.values()[0]
+                if not isinstance(first, dict) and first is not None:
+                    y = {0: y}
+            except IndexError:
+                pass
+
+            for n in y:
+                x = y[n]
+                if not isinstance(x, dict) or 'codec' not in x:
+                    raise ConverterError('Invalid subtitle codec specification')
+
+                if 'path' in x and 'source' not in x:
+                    raise ConverterError('Cannot specify subtitle path without FFMPEG source number')
+
+                if 'source' in x and 'path' not in x:
+                    raise ConverterError('Cannot specify alternate input source without a path')
+
+                c = x['codec']
+                if c not in self.subtitle_codecs:
+                    raise ConverterError('Requested unknown subtitle codec ' + str(c))
+
+                subtitle_options.extend(self.subtitle_codecs[c]().parse_options(x, n))
+                if subtitle_options is None:
+                    raise ConverterError('Unknown subtitle codec error')
+
+        if 'video' in opt:
+            x = opt['video']
+            if not isinstance(x, dict) or 'codec' not in x:
                 raise ConverterError('Invalid video codec specification')
 
-        c = opt_video['codec']
-        if c not in self.video_codecs:
-            raise ConverterError('Requested unknown video codec ' + str(c))
+            c = x['codec']
+            if c not in self.video_codecs:
+                raise ConverterError('Requested unknown video codec ' + str(c))
 
-        video_options = self.video_codecs[c]().parse_options(opt_video)
-        if video_options is None:
-            raise ConverterError('Unknown video codec error')
-
-        if 'subtitle' not in opt:
-            opt_subtitle = {'codec': None}
-        else:
-            opt_subtitle = opt['subtitle']
-            if not isinstance(opt_subtitle, dict) or 'codec' not in opt_subtitle:
-                raise ConverterError('Invalid subtitle codec specification')
-
-        c = opt_subtitle['codec']
-        if c not in self.subtitle_codecs:
-            raise ConverterError('Requested unknown subtitle codec ' + str(c))
-
-        subtitle_options = self.subtitle_codecs[c]().parse_options(opt_subtitle)
-        if subtitle_options is None:
-            raise ConverterError('Unknown subtitle codec error')
-
-        if 'map' in opt:
-            m = opt['map']
-            if not type(m) == int:
-                raise ConverterError('map needs to be int')
-            else:
-                format_options.extend(['-map', str(m)])
-
+            video_options = self.video_codecs[c]().parse_options(x)
+            if video_options is None:
+                raise ConverterError('Unknown video codec error')
 
         # aggregate all options
-        optlist = audio_options + video_options + subtitle_options + format_options
+        optlist = video_options + audio_options + subtitle_options + format_options
 
         if twopass == 1:
             optlist.extend(['-pass', '1'])
