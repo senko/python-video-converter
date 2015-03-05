@@ -83,7 +83,7 @@ class Converter(object):
 
         # Creates the new nested dictionary to preserve backwards compatability
         try:
-            first = y.values()[0]
+            first = list(y.values())[0]
             if not isinstance(first, dict):
                 y = {0: y}
         except IndexError:
@@ -114,7 +114,7 @@ class Converter(object):
 
         # Creates the new nested dictionary to preserve backwards compatability
         try:
-            first = y.values()[0]
+            first = list(y.values())[0]
             if not isinstance(first, dict):
                 y = {0: y}
         except IndexError:
