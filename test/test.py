@@ -75,6 +75,7 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(None, f.probe('/dev/null'))
 
         info = f.probe('test1.ogg')
+
         self.assertEqual('ogg', info.format.format)
         self.assertAlmostEqual(33.00, info.format.duration, places=2)
         self.assertEqual(2, len(info.streams))
@@ -87,23 +88,24 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(400, v.video_height)
         self.assertEqual(None, v.bitrate)
         self.assertAlmostEqual(25.00, v.video_fps, places=2)
-        self.assertEqual(v.metadata['ENCODER'], 'ffmpeg2theora 0.19')
+        self.assertEqual(v.metadata['encoder'], 'ffmpeg2theora 0.19')
 
         a = info.streams[1]
-        self.assertEqual(a, info.audio)
+        self.assertEqual(a, info.audio[0])
         self.assertEqual('audio', a.type)
         self.assertEqual('vorbis', a.codec)
         self.assertEqual(2, a.audio_channels)
         self.assertEqual(80000, a.bitrate)
         self.assertEqual(48000, a.audio_samplerate)
-        self.assertEqual(a.metadata['ENCODER'], 'ffmpeg2theora 0.19')
+        self.assertEqual(a.metadata['encoder'], 'ffmpeg2theora 0.19')
 
         self.assertEqual(repr(info), 'MediaInfo(format='
                                      'MediaFormatInfo(format=ogg, duration=33.00), streams=['
                                      'MediaStreamInfo(type=video, codec=theora, width=720, '
-                                     'height=400, fps=25.0, ENCODER=ffmpeg2theora 0.19), '
+                                     'height=400, fps=25.0, encoder=ffmpeg2theora 0.19), '
                                      'MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000, '
-                                     'bitrate=80000, ENCODER=ffmpeg2theora 0.19)])')
+                                     'bitrate=80000, encoder=ffmpeg2theora 0.19)])')
+        #self.assertEqual(repr(info), 'MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000, bitrate=80000, encoder=ffmpeg2theora 0.19) MediaStreamInfo(type=audio, codec=vorbis, channels=2, rate=48000, bitrate=80000, encoder=ffmpeg2theora 0.19)')
 
     def test_ffmpeg_convert(self):
         f = ffmpeg.FFMpeg()
@@ -212,7 +214,7 @@ class TestFFMpeg(unittest.TestCase):
         self.assertEqual(['-c:a:0', 'doctest', '-metadata:s:a:0', 'language=und'],
                          c.parse_options({'codec': 'doctest', 'channels': 0, 'bitrate': 0, 'samplerate': 0}))
 
-        self.assertEqual(['-acodec', 'doctest', '-ac', '1', '-ab', '64k', '-ar', '44100'],
+        self.assertEqual(['-c:a:0', 'doctest', '-ac:a:0', '1', '-b:a:0', '64k', '-ar:a:0', '44100', '-metadata:s:a:0', 'language=und'],
                          c.parse_options({'codec': 'doctest', 'channels': '1', 'bitrate': '64', 'samplerate': '44100'}))
 
         c = avcodecs.VideoCodec()
@@ -261,9 +263,9 @@ class TestFFMpeg(unittest.TestCase):
         self.assertRaisesSpecific(ConverterError, c.parse_options,
                                   {'format': 'ogg', 'audio': {'codec': 'bogus'}})
 
-        self.assertEqual(['-an', '-vcodec', 'libtheora', '-r', '25', '-sn', '-f', 'ogg'],
+        self.assertEqual(['-vcodec', 'libtheora', '-r', '25', '-an', '-sn', '-f', 'ogg'],
                          c.parse_options({'format': 'ogg', 'video': {'codec': 'theora', 'fps': 25}}))
-        self.assertEqual(['-acodec', 'copy', '-vcodec', 'copy', '-sn', '-f', 'ogg'],
+        self.assertEqual(['-vcodec', 'copy', '-c:a:0', 'copy', '-metadata:s:a:0', 'language=und', '-sn', '-f', 'ogg'],
                          c.parse_options({'format': 'ogg', 'audio': {'codec': 'copy'}, 'video': {'codec': 'copy'}, 'subtitle': {'codec': None}}))
 
         info = c.probe('test1.ogg')
