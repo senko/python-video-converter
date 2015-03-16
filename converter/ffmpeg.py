@@ -453,8 +453,8 @@ class FFMpeg(object):
             ret = ret.decode(console_encoding)
             total_output += ret
             buf += ret
-            if '\r' in buf:
-                line, buf = buf.split('\r', 1)
+            if '\n' in buf:
+                line, buf = buf.split('\n', 1)
 
                 tmp = pat.findall(line)
                 if len(tmp) == 1:
