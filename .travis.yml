@@ -5,8 +5,12 @@ python:
   - "3.2"
   - "3.3"
 
+env:
+  - FFMPEG_STATIC=http://ffmpeg.gusari.org/static/64bit/ffmpeg.static.64bit.2014-07-16.tar.gz
+  - FFMPEG_STATIC=http://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz
+
 before_install:
- - sudo sh ./test/install-ffmpeg.sh
+ - sudo sh -x ./test/install-ffmpeg.sh $FFMPEG_STATIC
 
 script:
  - python setup.py test
