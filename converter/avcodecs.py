@@ -60,6 +60,7 @@ class AudioCodec(BaseCodec):
         'samplerate': int,
         'source': int,
         'path' : str,
+        'filter' : str,
         'map': int
     }
 
@@ -75,8 +76,10 @@ class AudioCodec(BaseCodec):
 
         if 'bitrate' in safe:
             br = safe['bitrate']
-            if br < 8 or br > 1536:
-                del safe['bitrate']
+            if br < 8:
+                br = 8
+            if br > 1536:
+                br = 1536
 
         if 'samplerate' in safe:
             f = safe['samplerate']
@@ -103,9 +106,11 @@ class AudioCodec(BaseCodec):
         if 'channels' in safe:
             optlist.extend(['-ac:a:' + stream, str(safe['channels'])])
         if 'bitrate' in safe:
-            optlist.extend(['-b:a:' + stream, str(safe['bitrate']) + 'k'])
+            optlist.extend(['-b:a:' + stream, str(br) + 'k'])
         if 'samplerate' in safe:
             optlist.extend(['-ar:a:' + stream, str(safe['samplerate'])])
+        if 'filter' in safe:
+            optlist.extend(['-filter:a:' + stream, str(safe['filter'])])
         if 'language' in safe:
                 lang = str(safe['language'])
         else:
@@ -518,6 +523,13 @@ class Ac3Codec(AudioCodec):
     """
     codec_name = 'ac3'
     ffmpeg_codec_name = 'ac3'
+    
+    def parse_options(self, opt, stream=0):
+        if 'channels' in opt:
+            c = opt['channels']
+            if c > 6:
+                opt['channels'] = 6
+        return super(Ac3Codec, self).parse_options(opt, stream)
 
 
 class FlacCodec(AudioCodec):
