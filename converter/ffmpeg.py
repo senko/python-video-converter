@@ -96,6 +96,7 @@ class MediaStreamInfo(object):
       * codec - codec (short) name (e.g "vorbis", "theora")
       * codec_desc - codec full (descriptive) name
       * duration - stream duration in seconds
+      * map - stream index for ffmpeg mapping
       * metadata - optional metadata associated with a video or audio stream
       * bitrate - stream bitrate in bytes/second
       * attached_pic - (0, 1 or None) is stream a poster image? (e.g. in mp3)
@@ -118,6 +119,7 @@ class MediaStreamInfo(object):
         self.video_width = None
         self.video_height = None
         self.video_fps = None
+        self.video_level = None
         self.audio_channels = None
         self.audio_samplerate = None
         self.attached_pic = None
@@ -168,8 +170,8 @@ class MediaStreamInfo(object):
             self.attached_pic = self.parse_int(val)
 
         if key.startswith('TAG:'):
-            key = key.split('TAG:')[1]
-            value = val
+            key = key.split('TAG:')[1].lower()
+            value = val.lower().strip()
             self.metadata[key] = value
 
         if self.type == 'audio':
@@ -193,6 +195,8 @@ class MediaStreamInfo(object):
                         self.video_fps = float(n) / float(d)
                 elif '.' in val:
                     self.video_fps = self.parse_float(val)
+            if key == 'level':
+                self.video_level = self.parse_float(val)
 
         if self.type == 'subtitle':
             if key == 'disposition:forced':
@@ -296,12 +300,24 @@ class MediaInfo(object):
     @property
     def audio(self):
         """
-        First audio stream, or None if there are no audio streams.
+        All audio streams
         """
+        result = []
         for s in self.streams:
             if s.type == 'audio':
-                return s
-        return None
+                result.append(s)
+        return result
+
+    @property
+    def subtitle(self):
+        """
+        All subtitle streams
+        """
+        result = []
+        for s in self.streams:
+            if s.type == 'subtitle':
+                result.append(s)
+        return result
 
 
 class FFMpeg(object):
@@ -351,7 +367,7 @@ class FFMpeg(object):
     def _spawn(cmds):
         logger.debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
         return Popen(cmds, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                     close_fds=True)
+                     close_fds=(os.name != 'nt'))
 
     def probe(self, fname, posters_as_video=True):
         """
@@ -394,7 +410,7 @@ class FFMpeg(object):
 
         return info
 
-    def convert(self, infile, outfile, opts, timeout=10):
+    def convert(self, infile, outfile, opts, timeout=10, preopts=None, postopts=None):
         """
         Convert the source media (infile) according to specified options
         (a list of ffmpeg switches as strings) and save it to outfile.
@@ -415,11 +431,27 @@ class FFMpeg(object):
         ...    pass # can be used to inform the user about conversion progress
 
         """
+        if os.name == 'nt':
+            timeout = 0
+
         if not os.path.exists(infile):
             raise FFMpegError("Input file doesn't exist: " + infile)
 
-        cmds = [self.ffmpeg_path, '-i', infile]
+        cmds = [self.ffmpeg_path]
+        if preopts:
+            cmds.extend(preopts)
+        cmds.extend(['-i', infile])
+
+        # Move additional inputs to the front of the line
+        for ind, command in enumerate(opts):
+            if command == '-i':
+                cmds.extend(['-i', opts[ind + 1]])
+                del opts[ind]
+                del opts[ind]
+
         cmds.extend(opts)
+        if postopts:
+            cmds.extend(postopts)
         cmds.extend(['-y', outfile])
 
         if timeout:
@@ -450,7 +482,14 @@ class FFMpeg(object):
             if not ret:
                 break
 
-            ret = ret.decode(console_encoding)
+            try:
+                ret = ret.decode(console_encoding)
+            except UnicodeDecodeError:
+                try:
+                    ret = ret.decode(console_encoding, errors="ignore")
+                except:
+                    pass
+
             total_output += ret
             buf += ret
             if '\r' in buf:
