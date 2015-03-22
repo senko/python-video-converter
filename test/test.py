@@ -211,7 +211,7 @@ class TestFFMpeg(unittest.TestCase):
         c.codec_name = 'doctest'
         c.ffmpeg_codec_name = 'doctest'
 
-        self.assertEqual(['-c:a:0', 'doctest', '-metadata:s:a:0', 'language=und'],
+        self.assertEqual(['-c:a:0', 'doctest', '-b:a:0', '8k', '-metadata:s:a:0', 'language=und'],
                          c.parse_options({'codec': 'doctest', 'channels': 0, 'bitrate': 0, 'samplerate': 0}))
 
         self.assertEqual(['-c:a:0', 'doctest', '-ac:a:0', '1', '-b:a:0', '64k', '-ar:a:0', '44100', '-metadata:s:a:0', 'language=und'],
