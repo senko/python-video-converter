@@ -3,14 +3,48 @@
 import os.path
 import os
 import re
-import signal
 from subprocess import Popen, PIPE
+from threading import Event, Lock, Thread
+from time import monotonic  # use time.time or monotonic.monotonic on Python 2
 import logging
 import locale
 
 logger = logging.getLogger(__name__)
 
 console_encoding = locale.getdefaultlocale()[1] or 'UTF-8'
+
+
+class WatchdogTimer(Thread):
+    """Run *callback* in *timeout* seconds unless the timer is restarted.
+
+    http://stackoverflow.com/a/34115590
+    """
+
+    def __init__(self, timeout, callback, *args, timer=monotonic, **kwargs):
+        super().__init__(**kwargs)
+        self.timeout = timeout
+        self.callback = callback
+        self.args = args
+        self.timer = timer
+        self.cancelled = Event()
+        self.blocked = Lock()
+
+    def run(self):
+        self.restart() # don't start timer until `.start()` is called
+        # wait until timeout happens or the timer is canceled
+        while not self.cancelled.wait(self.deadline - self.timer()):
+            # don't test the timeout while something else holds the lock
+            # allow the timer to be restarted while blocked
+            with self.blocked:
+                if self.deadline <= self.timer():  # timeout
+                    return self.callback(*self.args)
+
+    def restart(self):
+        """Restart the watchdog timer."""
+        self.deadline = self.timer() + self.timeout
+
+    def cancel(self):
+        self.cancelled.set()
 
 
 class FFMpegError(Exception):
@@ -423,13 +457,6 @@ class FFMpeg(object):
         cmds.extend(opts)
         cmds.extend(['-y', outfile])
 
-        if timeout:
-            def on_sigalrm(*_):
-                signal.signal(signal.SIGALRM, signal.SIG_DFL)
-                raise Exception('timed out while waiting for ffmpeg')
-
-            signal.signal(signal.SIGALRM, on_sigalrm)
-
         try:
             p = self._spawn(cmds)
         except OSError:
@@ -439,14 +466,17 @@ class FFMpeg(object):
         buf = ''
         total_output = ''
         pat = re.compile(r'time=([0-9.:]+) ')
+
+        watchdog = WatchdogTimer(timeout, callback=p.kill, daemon=True)
+        if timeout:
+            watchdog.start()
+
         while True:
-            if timeout:
-                signal.alarm(timeout)
 
             ret = p.stderr.read(10)
 
             if timeout:
-                signal.alarm(0)
+                watchdog.restart()
 
             if not ret:
                 break
@@ -470,7 +500,7 @@ class FFMpeg(object):
                     yield timecode
 
         if timeout:
-            signal.signal(signal.SIGALRM, signal.SIG_DFL)
+            watchdog.cancel()
 
         p.communicate()  # wait for process to exit
 
