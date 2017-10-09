@@ -30,21 +30,21 @@ class Converter(object):
         self.subtitle_codecs = {}
         self.formats = {}
 
-        for cls in audio_codec_list:
-            name = cls.codec_name
-            self.audio_codecs[name] = cls
-
-        for cls in video_codec_list:
-            name = cls.codec_name
-            self.video_codecs[name] = cls
-
-        for cls in subtitle_codec_list:
-            name = cls.codec_name
-            self.subtitle_codecs[name] = cls
+        self._init_codecs(codec_list=audio_codec_list,
+                          codecs=self.audio_codecs)
+        self._init_codecs(codec_list=video_codec_list,
+                          codecs=self.video_codecs)
+        self._init_codecs(codec_list=subtitle_codec_list,
+                          codecs=self.subtitle_codecs)
 
         for cls in format_list:
             name = cls.format_name
             self.formats[name] = cls
+
+    def _init_codecs(self, codec_list, codecs):
+        for cls in codec_list:
+            name = cls.codec_name
+            codecs[name] = cls
 
     def parse_options(self, opt, twopass=None):
         """
