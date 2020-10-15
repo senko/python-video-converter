@@ -56,7 +56,7 @@ To install the package:
 
     python setup.py install
 
-Note that this only installs the Python Video Converter library. The `ffmpeg`
+Note: that this only installs the Python Video Converter library. The `ffmpeg`
 and `ffprobe` tools should be installed on the system separately, with all the
 codec and format support you require.
 
