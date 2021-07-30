@@ -546,7 +546,7 @@ class MpegCodec(VideoCodec):
     # is not correctly preserved, so we have to set it
     # again in vf; take care to put it *before* crop/pad, so
     # it uses the same adjusted dimensions as the codec itself
-    # (pad/crop will adjust it further if neccessary)
+    # (pad/crop will adjust it further if necessary)
     def _codec_specific_parse_options(self, safe):
         w = safe['width']
         h = safe['height']
